@@ -1,19 +1,26 @@
 ﻿using System.Diagnostics;
 using System.Linq.Expressions;
+using Data_storage_project_library.Contexts;
+using Data_storage_project_library.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Data_storage_project_library.Repositories;
 
-public class BaseRepository<T> where T : class
-{
-    private readonly DbContext _context;
-    private readonly DbSet<T> _dbSet;
 
-    public BaseRepository(DbContext context)
+
+public class BaseRepository<T> : IBaseRepository<T> where T : class
+{
+    private readonly ApplicationDbContext _context;
+
+    public BaseRepository(ApplicationDbContext context, DbSet<T> dbSet)
     {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _context = context;
         _dbSet = _context.Set<T>();
     }
+
+    private readonly DbSet<T> _dbSet;
+
+
 
     public async Task<T?> CreateAsync(T entity)
     {

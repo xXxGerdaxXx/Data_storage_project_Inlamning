@@ -6,9 +6,9 @@ using Data_storage_project_library.Repositories;
 
 namespace Data_storage_project_library.Services;
 
-public class CustomerService(BaseRepository<CustomerEntity> customerRepository) : ICustomerService
+public class CustomerService(CustomerRepository customerRepository) : ICustomerService
 {
-    private readonly BaseRepository<CustomerEntity> _customerRepository = customerRepository ?? throw new ArgumentNullException(nameof(customerRepository));
+    private readonly CustomerRepository _customerRepository = customerRepository;
 
     public async Task<CustomerEntity?> RegisterCustomerAsync(CustomerRegistrationForm form)
     {
@@ -34,4 +34,16 @@ public class CustomerService(BaseRepository<CustomerEntity> customerRepository) 
     {
         return await _customerRepository.DeleteAsync(c => c.Id == customerId);
     }
+
+    public async Task<CustomerEntity?> UpdateCustomerAsync(int customerId, CustomerRegistrationForm form)
+    {
+        var existingCustomer = await _customerRepository.GetAsync(c => c.Id == customerId);
+        if (existingCustomer == null)
+            throw new KeyNotFoundException($"Customer with ID {customerId} not found.");
+
+        existingCustomer.CustomerName = form.CustomerName;
+
+        return await _customerRepository.UpdateAsync(existingCustomer, c => c.Id == customerId);
+    }
+
 }

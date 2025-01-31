@@ -33,6 +33,19 @@ public class CurrencyService(IBaseRepository<CurrencyEntity> currencyRepository)
         return await _currencyRepository.GetAsync(c => c.Id == currencyId);
     }
 
+    public async Task<CurrencyEntity?> UpdateCurrencyAsync(int currencyId, CurrencyRegistrationForm form)
+    {
+        var existingCurrency = await _currencyRepository.GetAsync(c => c.Id == currencyId);
+        if (existingCurrency == null)
+            throw new KeyNotFoundException($"Currency with ID {currencyId} not found.");
+
+        existingCurrency.Code = form.Code;
+        existingCurrency.Name = form.Name;
+
+        return await _currencyRepository.UpdateAsync(existingCurrency, c => c.Id == currencyId);
+    }
+
+
     public async Task<bool> DeleteCurrencyAsync(int currencyId)
     {
         return await _currencyRepository.DeleteAsync(c => c.Id == currencyId);

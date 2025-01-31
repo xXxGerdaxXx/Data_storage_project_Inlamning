@@ -5,12 +5,12 @@ namespace Data_storage_project_library.Factories;
 
 public static class StatusRegistrationFactory
 {
-    public static StatusEntity CreateStatus(StatusRegistrationForm form)
+    public static StatusTypeEntity CreateStatus(StatusRegistrationForm form)
     {
         if (form == null)
             throw new ArgumentNullException(nameof(form), "Status registration form cannot be null.");
 
-        return new StatusEntity
+        return new StatusTypeEntity
         {
             Name = form.Name
         };

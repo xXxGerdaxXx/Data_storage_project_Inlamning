@@ -8,5 +8,6 @@ public interface IRoleService
     Task<RoleEntity?> RegisterRoleAsync(RoleRegistrationForm form);
     Task<IEnumerable<RoleEntity>> GetAllRolesAsync();
     Task<RoleEntity?> GetRoleByIdAsync(int roleId);
+    Task<RoleEntity?> UpdateRoleAsync(int roleId, RoleRegistrationForm form);
     Task<bool> DeleteRoleAsync(int roleId);
 }

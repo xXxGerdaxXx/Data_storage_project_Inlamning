@@ -2,13 +2,14 @@
 using Data_storage_project_library.Entities;
 using Data_storage_project_library.Factories;
 using Data_storage_project_library.Interfaces;
+using Data_storage_project_library.Repositories;
 using System.Linq.Expressions;
 
 namespace Data_storage_project_library.Services;
 
-public class ProjectService(IBaseRepository<ProjectEntity> projectRepository) : IProjectService
+public class ProjectService(ProjectRepository repository) : IProjectService
 {
-    private readonly IBaseRepository<ProjectEntity> _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
+    private readonly ProjectRepository _projectRepository = repository;
 
     public async Task<ProjectEntity?> RegisterProjectAsync(ProjectRegistrationForm form)
     {
@@ -47,6 +48,23 @@ public class ProjectService(IBaseRepository<ProjectEntity> projectRepository) : 
         return await _projectRepository.DeleteAsync(p => p.Id == projectIdString);
     }
 
+    public async Task<ProjectEntity?> UpdateProjectAsync(int projectId, ProjectRegistrationForm form)
+    {
+        var existingProject = await _projectRepository.GetAsync(p => p.Id == projectId.ToString());
+        if (existingProject == null)
+            throw new KeyNotFoundException($"Project with ID {projectId} not found.");
+
+        existingProject.Title = form.Title;
+        existingProject.Description = form.Description;
+        existingProject.StartDate = form.StartDate;
+        existingProject.EndDate = form.EndDate;
+        existingProject.CustomerId = form.CustomerId;
+        existingProject.StatusId = form.StatusId;
+        existingProject.EmployeeId = form.EmployeeId;
+        existingProject.ServiceId = form.ServiceId;
+
+        return await _projectRepository.UpdateAsync(existingProject, p => p.Id == projectId.ToString());
+    }
 
 
     private async Task<string> GenerateProjectIdAsync()

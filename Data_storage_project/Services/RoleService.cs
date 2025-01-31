@@ -36,6 +36,17 @@ public class RoleService(IBaseRepository<RoleEntity> roleRepository) : IRoleServ
         return await _roleRepository.GetAsync(r => r.Id == roleId);
     }
 
+    public async Task<RoleEntity?> UpdateRoleAsync(int roleId, RoleRegistrationForm form)
+    {
+        var existingRole = await _roleRepository.GetAsync(r => r.Id == roleId);
+        if (existingRole == null)
+            return null;
+
+        existingRole.RoleName = form.RoleName;
+
+        return await _roleRepository.UpdateAsync(existingRole, r => r.Id == roleId);
+    }
+
     public async Task<bool> DeleteRoleAsync(int roleId)
     {
         return await _roleRepository.DeleteAsync(r => r.Id == roleId);

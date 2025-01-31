@@ -6,7 +6,9 @@ namespace Data_storage_project_library.Interfaces;
 public interface ICustomerService
 {
     Task<CustomerEntity?> RegisterCustomerAsync(CustomerRegistrationForm form);
-    Task<CustomerEntity?> GetCustomerByIdAsync(int customerId);
     Task<IEnumerable<CustomerEntity>> GetAllCustomersAsync();
+    Task<CustomerEntity?> GetCustomerByIdAsync(int customerId);
+    Task<CustomerEntity?> UpdateCustomerAsync(int customerId, CustomerRegistrationForm form);
     Task<bool> DeleteCustomerAsync(int customerId);
 }
+

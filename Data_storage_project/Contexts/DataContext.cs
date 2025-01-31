@@ -5,7 +5,7 @@ namespace Data_storage_project_library.Contexts;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
-    // Registering all entities in the database
+    
     public DbSet<CustomerEntity> Customers { get; set; }
     public DbSet<CustomerContactEntity> CustomerContacts { get; set; }
     public DbSet<ProjectEntity> Projects { get; set; }
@@ -19,18 +19,24 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     {
         base.OnModelCreating(modelBuilder);
 
-        // Configures customer & customerContact relationship
+        
         modelBuilder.Entity<CustomerEntity>()
             .HasMany(c => c.CustomerContacts)
             .WithOne(cc => cc.Customer)
             .HasForeignKey(cc => cc.CustomerId)
-            .OnDelete(DeleteBehavior.Cascade); // Deletes contacts when customer is deleted
+            .OnDelete(DeleteBehavior.Cascade); 
 
-        // Configures project relationships
+        
         modelBuilder.Entity<ProjectEntity>()
             .HasOne(p => p.Customer)
             .WithMany()
             .HasForeignKey(p => p.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ServiceEntity>()
+            .HasOne(s => s.Currency)
+            .WithMany()
+            .HasForeignKey(s => s.CurrencyId)
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<ProjectEntity>()
@@ -51,7 +57,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .HasForeignKey(p => p.ServiceId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Configures employee & role relationship
+        
         modelBuilder.Entity<EmployeeEntity>()
             .HasOne(e => e.Role)
             .WithMany()

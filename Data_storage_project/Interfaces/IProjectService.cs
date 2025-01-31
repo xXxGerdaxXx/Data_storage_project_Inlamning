@@ -5,8 +5,10 @@ namespace Data_storage_project_library.Interfaces;
 
 public interface IProjectService
 {
-    Task<ProjectEntity?> RegisterProjectAsync(ProjectRegistrationForm form); 
+    Task<ProjectEntity?> RegisterProjectAsync(ProjectRegistrationForm form);
     Task<IEnumerable<ProjectEntity>> GetAllProjectsAsync();
-    Task<ProjectEntity?> GetProjectByIdAsync(int projectId); 
-    Task<bool> DeleteProjectAsync(int projectId); 
+    Task<ProjectEntity?> GetProjectByIdAsync(int projectId);
+    Task<ProjectEntity?> UpdateProjectAsync(int projectId, ProjectRegistrationForm form);
+    Task<bool> DeleteProjectAsync(int projectId);
 }
+
