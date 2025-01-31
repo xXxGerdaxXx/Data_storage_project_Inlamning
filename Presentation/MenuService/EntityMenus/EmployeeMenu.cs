@@ -10,7 +10,7 @@ public class EmployeeMenu
 
     public EmployeeMenu(IEmployeeService employeeService)
     {
-        _employeeService = employeeService ?? throw new ArgumentNullException(nameof(employeeService)); 
+        _employeeService = employeeService; 
     }
 
     public async Task RunAsync()

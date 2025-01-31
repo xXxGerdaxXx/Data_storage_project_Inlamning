@@ -69,17 +69,16 @@ public class ProjectService(ProjectRepository repository) : IProjectService
 
     private async Task<string> GenerateProjectIdAsync()
     {
-        // Fetch the last inserted project using GetLastProjectAsync()
         var lastProject = await _projectRepository.GetLastProjectAsync();
 
-        // Extract the numeric part of the ID
         int lastNumber = 0;
-        if (lastProject != null && lastProject.Id.StartsWith("P-"))
+        if (lastProject?.Id != null && lastProject.Id.StartsWith("P-"))
         {
-            int.TryParse(lastProject.Id.AsSpan(2), out lastNumber);
+            int.TryParse(lastProject.Id.Substring(2), out lastNumber);
         }
 
-        // Increment the number and generate the new ID
         return $"P-{lastNumber + 1}";
     }
+
+
 }

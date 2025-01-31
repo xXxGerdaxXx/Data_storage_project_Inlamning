@@ -16,16 +16,17 @@ namespace Data_storage_project_library.Repositories
 
        
 
-        public ProjectRepository(ApplicationDbContext context, DbSet<ProjectEntity> dbSet) : base(context, dbSet)
+        public ProjectRepository(ApplicationDbContext context) : base(context)
         {
             _context = context;
         }
 
-        public async Task<ProjectEntity> GetLastProjectAsync()
+        public async Task<ProjectEntity?> GetLastProjectAsync()
         {
-            var entity = await _context.Projects.LastAsync();
-            return entity;
-
+            return await _context.Projects
+                .OrderByDescending(p => EF.Functions.Like(p.Id, "P-%") ? Convert.ToInt32(p.Id.Substring(2)) : 0)
+                .FirstOrDefaultAsync();
         }
+
     }
 }

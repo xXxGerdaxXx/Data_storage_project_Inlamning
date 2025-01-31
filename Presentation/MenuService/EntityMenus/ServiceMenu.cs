@@ -9,7 +9,7 @@ public class ServiceMenu
 
     public ServiceMenu(IServiceService serviceService)
     {
-        _serviceService = serviceService ?? throw new ArgumentNullException(nameof(serviceService));
+        _serviceService = serviceService;
     }
 
     public async Task RunAsync()

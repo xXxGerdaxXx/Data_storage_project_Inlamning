@@ -3,6 +3,7 @@ using Data_storage_project_library.Interfaces;
 using Data_storage_project_library.Repositories;
 using Data_storage_project_library.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -14,10 +15,23 @@ namespace Presentation.MenuService.EntityMenus;
 public class MainMenu
 {
     private readonly CustomerMenu _customerMenu;
+    private readonly EmployeeMenu _employeeMenu;
+    private readonly RoleMenu _roleMenu;
+    private readonly ServiceMenu _serviceMenu;
+    private readonly ProjectMenu _projectMenu;
+    private readonly CurrencyMenu _currencyMenu;
+    private readonly StatusMenu _statusMenu;
 
-    public MainMenu(CustomerMenu customerMenu)
+    public MainMenu(CustomerMenu customerMenu, EmployeeMenu employeeMenu, RoleMenu roleMenu, ProjectMenu projectMenu, CurrencyMenu currencyMenu, ServiceMenu serviceMenu, StatusMenu statusMenu)
     {
         _customerMenu = customerMenu;
+        _employeeMenu = employeeMenu;
+        _roleMenu = roleMenu;
+        _projectMenu = projectMenu;
+        _currencyMenu = currencyMenu;
+        _serviceMenu = serviceMenu;
+        _statusMenu = statusMenu;
+
     }
 
     public async Task RunAsync()
@@ -44,22 +58,22 @@ public class MainMenu
                     
                     break;
                 case "2":
-                   
+                   await _employeeMenu.RunAsync();
                     break;
                 case "3":
-                  
+                    await _projectMenu.RunAsync();
                     break;
                 case "4":
-                  
+                    await _statusMenu.RunAsync();
                     break;
                 case "5":
-                   
+                    await _currencyMenu.RunAsync();
                     break;
                 case "6":
-                    
+                    await _serviceMenu.RunAsync();
                     break;
                 case "7":
-                 
+                    await _roleMenu.RunAsync();
                     break;
                 case "8":
                     Console.WriteLine("Exiting...");

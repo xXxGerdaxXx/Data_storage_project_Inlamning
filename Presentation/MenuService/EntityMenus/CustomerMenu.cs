@@ -87,9 +87,41 @@ public class CustomerMenu
             return;
         }
 
+        // Collect Customer Contact Information
+        Console.Write("Enter First Name: ");
+        var firstName = Console.ReadLine()?.Trim();
+
+        Console.Write("Enter Last Name: ");
+        var lastName = Console.ReadLine()?.Trim();
+
+        Console.Write("Enter Email: ");
+        var email = Console.ReadLine()?.Trim() ?? string.Empty;  
+
+        Console.Write("Enter Phone Number: ");
+        var phoneNumber = Console.ReadLine()?.Trim() ?? string.Empty;
+
+        // Validate required fields
+        if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName))
+        {
+            Console.WriteLine("Error: First name and last name are required. Press any key to return...");
+            Console.ReadKey();
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(email) && string.IsNullOrWhiteSpace(phoneNumber))
+        {
+            Console.WriteLine("Error: At least one contact method (email or phone) is required. Press any key to return...");
+            Console.ReadKey();
+            return;
+        }
+
         var form = new CustomerRegistrationForm
         {
-            CustomerName = customerName
+            CustomerName = customerName,
+            FirstName = firstName,
+            LastName = lastName,
+            Email = email,
+            PhoneNumber = phoneNumber
         };
 
         var customer = await _customerService.RegisterCustomerAsync(form);

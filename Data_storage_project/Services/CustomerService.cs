@@ -16,7 +16,8 @@ public class CustomerService(CustomerRepository customerRepository) : ICustomerS
             throw new ArgumentNullException(nameof(form), "Customer form cannot be null.");
 
         var newCustomer = CustomerRegistrationFactory.CreateCustomer(form);
-
+        //skapa contactperson
+        //skapar customer Id
         return await _customerRepository.CreateAsync(newCustomer);
     }
 

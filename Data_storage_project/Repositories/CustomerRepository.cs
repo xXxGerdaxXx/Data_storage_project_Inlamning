@@ -11,7 +11,7 @@ namespace Data_storage_project_library.Repositories
 {
     public class CustomerRepository : BaseRepository<CustomerEntity>
     {
-        public CustomerRepository(ApplicationDbContext context, DbSet<CustomerEntity> dbSet) : base(context, dbSet)
+        public CustomerRepository(ApplicationDbContext context) : base(context)
         {
         }
     }

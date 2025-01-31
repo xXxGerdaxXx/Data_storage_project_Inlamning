@@ -9,7 +9,7 @@ public class RoleMenu
 
     public RoleMenu(IRoleService roleService)
     {
-        _roleService = roleService ?? throw new ArgumentNullException(nameof(roleService)); 
+        _roleService = roleService;
     }
 
     public async Task RunAsync()

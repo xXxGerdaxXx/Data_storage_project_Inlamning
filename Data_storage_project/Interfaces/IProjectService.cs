@@ -10,5 +10,6 @@ public interface IProjectService
     Task<ProjectEntity?> GetProjectByIdAsync(int projectId);
     Task<ProjectEntity?> UpdateProjectAsync(int projectId, ProjectRegistrationForm form);
     Task<bool> DeleteProjectAsync(int projectId);
+
 }
 

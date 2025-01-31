@@ -6,10 +6,23 @@ namespace Presentation.MenuService.EntityMenus;
 public class ProjectMenu
 {
     private readonly IProjectService _projectService;
+    private readonly ICustomerService _customerService;
+    private readonly IStatusService _statusService;
+    private readonly IEmployeeService _employeeService;
+    private readonly IServiceService _serviceService;
 
-    public ProjectMenu(IProjectService projectService)
+    public ProjectMenu(
+        IProjectService projectService,
+        ICustomerService customerService,
+        IStatusService statusService,
+        IEmployeeService employeeService,
+        IServiceService serviceService)
     {
-        _projectService = projectService ?? throw new ArgumentNullException(nameof(projectService)); 
+        _projectService = projectService;
+        _customerService = customerService;
+        _statusService = statusService;
+        _employeeService = employeeService;
+        _serviceService = serviceService;
     }
 
     public async Task RunAsync()
@@ -98,7 +111,14 @@ public class ProjectMenu
             return;
         }
 
-        Console.Write("Enter Customer ID: ");
+        // Show available customers before selecting
+        Console.WriteLine("\n=== Available Customers ===");
+        var customers = await _customerService.GetAllCustomersAsync();
+        foreach (var customer in customers)
+        {
+            Console.WriteLine($"ID: {customer.Id}, Name: {customer.CustomerName}");
+        }
+        Console.Write("Select Customer ID: ");
         if (!int.TryParse(Console.ReadLine(), out int customerId))
         {
             Console.WriteLine("Invalid Customer ID. Press any key to return...");
@@ -106,7 +126,14 @@ public class ProjectMenu
             return;
         }
 
-        Console.Write("Enter Status ID: ");
+        // Show available statuses before selecting
+        Console.WriteLine("\n=== Project Statuses ===");
+        var statuses = await _statusService.GetAllStatusesAsync();
+        foreach (var status in statuses)
+        {
+            Console.WriteLine($"ID: {status.Id}, Name: {status.Name}");
+        }
+        Console.Write("Select Status ID: ");
         if (!int.TryParse(Console.ReadLine(), out int statusId))
         {
             Console.WriteLine("Invalid Status ID. Press any key to return...");
@@ -114,7 +141,14 @@ public class ProjectMenu
             return;
         }
 
-        Console.Write("Enter Employee ID: ");
+        // Show available employees before selecting
+        Console.WriteLine("\n=== Available Employees ===");
+        var employees = await _employeeService.GetAllEmployeesAsync();
+        foreach (var employee in employees)
+        {
+            Console.WriteLine($"ID: {employee.Id}, Name: {employee.FirstName} {employee.LastName}");
+        }
+        Console.Write("Select Employee ID: ");
         if (!int.TryParse(Console.ReadLine(), out int employeeId))
         {
             Console.WriteLine("Invalid Employee ID. Press any key to return...");
@@ -122,7 +156,14 @@ public class ProjectMenu
             return;
         }
 
-        Console.Write("Enter Service ID: ");
+        // Show available services with currency before selecting
+        Console.WriteLine("\n=== Available Services ===");
+        var services = await _serviceService.GetAllServicesAsync();
+        foreach (var service in services)
+        {
+            Console.WriteLine($"ID: {service.Id}, Name: {service.ServiceName}, Price: {service.Price} {service.Currency}");
+        }
+        Console.Write("Select Service ID: ");
         if (!int.TryParse(Console.ReadLine(), out int serviceId))
         {
             Console.WriteLine("Invalid Service ID. Press any key to return...");
@@ -145,6 +186,7 @@ public class ProjectMenu
         Console.WriteLine(project != null ? "Project added successfully!" : "Error adding project.");
         Console.ReadKey();
     }
+
 
     private async Task UpdateProjectAsync()
     {
