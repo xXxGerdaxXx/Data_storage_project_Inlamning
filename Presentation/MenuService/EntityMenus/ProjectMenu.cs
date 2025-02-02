@@ -3,27 +3,18 @@ using Data_storage_project_library.Interfaces;
 
 namespace Presentation.MenuService.EntityMenus;
 
-public class ProjectMenu
+public class ProjectMenu(
+    IProjectService projectService,
+    ICustomerService customerService,
+    IStatusService statusService,
+    IEmployeeService employeeService,
+    IServiceService serviceService)
 {
-    private readonly IProjectService _projectService;
-    private readonly ICustomerService _customerService;
-    private readonly IStatusService _statusService;
-    private readonly IEmployeeService _employeeService;
-    private readonly IServiceService _serviceService;
-
-    public ProjectMenu(
-        IProjectService projectService,
-        ICustomerService customerService,
-        IStatusService statusService,
-        IEmployeeService employeeService,
-        IServiceService serviceService)
-    {
-        _projectService = projectService;
-        _customerService = customerService;
-        _statusService = statusService;
-        _employeeService = employeeService;
-        _serviceService = serviceService;
-    }
+    private readonly IProjectService _projectService = projectService;
+    private readonly ICustomerService _customerService = customerService;
+    private readonly IStatusService _statusService = statusService;
+    private readonly IEmployeeService _employeeService = employeeService;
+    private readonly IServiceService _serviceService = serviceService;
 
     public async Task RunAsync()
     {
@@ -193,67 +184,92 @@ public class ProjectMenu
         Console.Clear();
         Console.WriteLine("=== Update Project ===");
 
-        Console.Write("Enter Project ID to update: ");
+        // Step 1: Prompt user to enter the numeric project ID
+        Console.Write("Enter Project ID (numeric only): ");
         if (!int.TryParse(Console.ReadLine(), out int projectId))
         {
-            Console.WriteLine("Invalid ID. Press any key to return...");
+            Console.WriteLine("Invalid Project ID. Press any key to return...");
             Console.ReadKey();
             return;
         }
 
-        Console.Write("Enter New Project Title: ");
-        var title = Console.ReadLine()?.Trim();
+        // Convert numeric ID to "P-123" format
+        var projectIdString = $"P-{projectId}";
 
-        if (string.IsNullOrWhiteSpace(title))
+        // Retrieve the existing project
+        var existingProject = await _projectService.GetProjectByIdAsync(projectIdString);
+        if (existingProject == null)
         {
-            Console.WriteLine("Error: Project title is required. Press any key to return...");
+            Console.WriteLine("Project not found. Press any key to return...");
             Console.ReadKey();
             return;
         }
 
-        Console.Write("Enter New Project Description (optional): ");
-        var description = Console.ReadLine()?.Trim();
+        // Step 2: Pre-fill data and allow user to modify fields
+        Console.Write($"Enter New Project Title (Current: {existingProject.Title}): ");
+        var title = Console.ReadLine()?.Trim();
+        title = string.IsNullOrWhiteSpace(title) ? existingProject.Title : title;
 
-        Console.Write("Enter New Start Date (yyyy-mm-dd): ");
+        Console.Write($"Enter New Project Description (Current: {existingProject.Description ?? "None"}): ");
+        var description = Console.ReadLine()?.Trim();
+        description = string.IsNullOrWhiteSpace(description) ? existingProject.Description : description;
+
+        Console.Write($"Enter New Start Date (yyyy-mm-dd) (Current: {existingProject.StartDate:yyyy-MM-dd}): ");
         if (!DateTime.TryParse(Console.ReadLine(), out DateTime startDate))
         {
-            Console.WriteLine("Invalid date format. Press any key to return...");
-            Console.ReadKey();
-            return;
+            startDate = existingProject.StartDate;
         }
 
-        Console.Write("Enter New Customer ID: ");
+        // Step 3: Show and select related entities
+        Console.WriteLine("\n=== Available Customers ===");
+        var customers = await _customerService.GetAllCustomersAsync();
+        foreach (var customer in customers)
+        {
+            Console.WriteLine($"ID: {customer.Id}, Name: {customer.CustomerName}");
+        }
+        Console.Write($"Select Customer ID (Current: {existingProject.CustomerId}): ");
         if (!int.TryParse(Console.ReadLine(), out int customerId))
         {
-            Console.WriteLine("Invalid Customer ID. Press any key to return...");
-            Console.ReadKey();
-            return;
+            customerId = existingProject.CustomerId;
         }
 
-        Console.Write("Enter New Status ID: ");
+        Console.WriteLine("\n=== Project Statuses ===");
+        var statuses = await _statusService.GetAllStatusesAsync();
+        foreach (var status in statuses)
+        {
+            Console.WriteLine($"ID: {status.Id}, Name: {status.Name}");
+        }
+        Console.Write($"Select Status ID (Current: {existingProject.StatusId}): ");
         if (!int.TryParse(Console.ReadLine(), out int statusId))
         {
-            Console.WriteLine("Invalid Status ID. Press any key to return...");
-            Console.ReadKey();
-            return;
+            statusId = existingProject.StatusId;
         }
 
-        Console.Write("Enter New Employee ID: ");
+        Console.WriteLine("\n=== Available Employees ===");
+        var employees = await _employeeService.GetAllEmployeesAsync();
+        foreach (var employee in employees)
+        {
+            Console.WriteLine($"ID: {employee.Id}, Name: {employee.FirstName} {employee.LastName}");
+        }
+        Console.Write($"Select Employee ID (Current: {existingProject.EmployeeId}): ");
         if (!int.TryParse(Console.ReadLine(), out int employeeId))
         {
-            Console.WriteLine("Invalid Employee ID. Press any key to return...");
-            Console.ReadKey();
-            return;
+            employeeId = existingProject.EmployeeId;
         }
 
-        Console.Write("Enter New Service ID: ");
+        Console.WriteLine("\n=== Available Services ===");
+        var services = await _serviceService.GetAllServicesAsync();
+        foreach (var service in services)
+        {
+            Console.WriteLine($"ID: {service.Id}, Name: {service.ServiceName}, Price: {service.Price} {service.Currency}");
+        }
+        Console.Write($"Select Service ID (Current: {existingProject.ServiceId}): ");
         if (!int.TryParse(Console.ReadLine(), out int serviceId))
         {
-            Console.WriteLine("Invalid Service ID. Press any key to return...");
-            Console.ReadKey();
-            return;
+            serviceId = existingProject.ServiceId;
         }
 
+        // Step 4: Create the update form
         var form = new ProjectRegistrationForm
         {
             Title = title,
@@ -265,17 +281,21 @@ public class ProjectMenu
             ServiceId = serviceId
         };
 
-        var updatedProject = await _projectService.UpdateProjectAsync(projectId, form);
+        // Step 5: Update the project
+        var updatedProject = await _projectService.UpdateProjectAsync(projectIdString, form);
         Console.WriteLine(updatedProject != null ? "Project updated successfully!" : "Error updating project.");
         Console.ReadKey();
     }
+
+
+
 
     private async Task DeleteProjectAsync()
     {
         Console.Clear();
         Console.WriteLine("=== Delete Project ===");
 
-        Console.Write("Enter Project ID to delete: ");
+        Console.Write("Enter Project ID to delete (numeric only): ");
         if (!int.TryParse(Console.ReadLine(), out int projectId))
         {
             Console.WriteLine("Invalid ID. Press any key to return...");
@@ -283,8 +303,12 @@ public class ProjectMenu
             return;
         }
 
-        var success = await _projectService.DeleteProjectAsync(projectId);
+        // Convert integer to string format "P-123"
+        var projectIdString = $"P-{projectId}";
+
+        var success = await _projectService.DeleteProjectAsync(projectIdString);
         Console.WriteLine(success ? "Project deleted successfully!" : "Project not found.");
         Console.ReadKey();
     }
+
 }

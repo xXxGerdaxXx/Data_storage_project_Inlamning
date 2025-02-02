@@ -7,9 +7,9 @@ public interface IProjectService
 {
     Task<ProjectEntity?> RegisterProjectAsync(ProjectRegistrationForm form);
     Task<IEnumerable<ProjectEntity>> GetAllProjectsAsync();
-    Task<ProjectEntity?> GetProjectByIdAsync(int projectId);
-    Task<ProjectEntity?> UpdateProjectAsync(int projectId, ProjectRegistrationForm form);
-    Task<bool> DeleteProjectAsync(int projectId);
+    Task<ProjectEntity?> GetProjectByIdAsync(string projectId);
+    Task<ProjectEntity?> UpdateProjectAsync(string projectId, ProjectRegistrationForm form);
+    Task<bool> DeleteProjectAsync(string projectId);
 
 }
 

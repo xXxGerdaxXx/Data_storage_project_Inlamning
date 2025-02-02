@@ -16,43 +16,43 @@ public class ProjectService(ProjectRepository repository) : IProjectService
         if (form == null)
             throw new ArgumentNullException(nameof(form), "Project registration form cannot be null.");
 
-        // Generate the next project ID
         var nextId = await GenerateProjectIdAsync();
 
-        // Use the factory to create a new project entity
         var project = ProjectRegistrationFactory.CreateProject(form, nextId);
 
-        // Save to the database via repository
         return await _projectRepository.CreateAsync(project);
     }
 
-    public async Task<ProjectEntity?> GetProjectByIdAsync(int projectId)
+    public async Task<ProjectEntity?> GetProjectByIdAsync(string projectId)
     {
-        string projectIdString = $"P-{projectId}"; // Convert int to string format "P-101"
-        return await _projectRepository.GetAsync(p => p.Id == projectIdString);
+        if (string.IsNullOrWhiteSpace(projectId) || !projectId.StartsWith("P-"))
+            throw new ArgumentException("Invalid project ID format. Expected format: 'P-123'.", nameof(projectId));
+
+        return await _projectRepository.GetAsync(p => p.Id == projectId);
     }
+
 
     public async Task<IEnumerable<ProjectEntity>> GetAllProjectsAsync()
     {
-        return await _projectRepository.GetAllAsync(); // ✅ FIXED: Now included!
+        return await _projectRepository.GetAllAsync(); 
     }
 
-    public async Task<bool> DeleteProjectAsync(int projectId)
+    public async Task<bool> DeleteProjectAsync(string projectId)
     {
-        string projectIdString = $"P-{projectId}"; // Convert int to string format "P-101"
+        if (string.IsNullOrWhiteSpace(projectId) || !projectId.StartsWith("P-"))
+            throw new ArgumentException("Invalid project ID format. Expected format: 'P-123'.", nameof(projectId));
 
-        var project = await _projectRepository.GetAsync(p => p.Id == projectIdString);
-        if (project == null)
-            throw new KeyNotFoundException($"Project with ID {projectIdString} not found.");
-
-        return await _projectRepository.DeleteAsync(p => p.Id == projectIdString);
+        var project = await _projectRepository.GetAsync(p => p.Id == projectId);
+        return project == null
+            ? throw new KeyNotFoundException($"Project with ID {projectId} not found.")
+            : await _projectRepository.DeleteAsync(p => p.Id == projectId);
     }
 
-    public async Task<ProjectEntity?> UpdateProjectAsync(int projectId, ProjectRegistrationForm form)
+
+    public async Task<ProjectEntity?> UpdateProjectAsync(string projectId, ProjectRegistrationForm form)
     {
-        var existingProject = await _projectRepository.GetAsync(p => p.Id == projectId.ToString());
-        if (existingProject == null)
-            throw new KeyNotFoundException($"Project with ID {projectId} not found.");
+        var existingProject = await _projectRepository.GetAsync(p => p.Id == projectId)
+            ?? throw new KeyNotFoundException($"Project with ID {projectId} not found.");
 
         existingProject.Title = form.Title;
         existingProject.Description = form.Description;
@@ -63,7 +63,7 @@ public class ProjectService(ProjectRepository repository) : IProjectService
         existingProject.EmployeeId = form.EmployeeId;
         existingProject.ServiceId = form.ServiceId;
 
-        return await _projectRepository.UpdateAsync(existingProject, p => p.Id == projectId.ToString());
+        return await _projectRepository.UpdateAsync(existingProject, p => p.Id == projectId);
     }
 
 
@@ -74,7 +74,7 @@ public class ProjectService(ProjectRepository repository) : IProjectService
         int lastNumber = 0;
         if (lastProject?.Id != null && lastProject.Id.StartsWith("P-"))
         {
-            int.TryParse(lastProject.Id.Substring(2), out lastNumber);
+            int.TryParse(lastProject.Id.AsSpan(2), out lastNumber);
         }
 
         return $"P-{lastNumber + 1}";

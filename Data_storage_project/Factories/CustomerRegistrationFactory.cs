@@ -9,16 +9,17 @@ public static class CustomerRegistrationFactory
     {
         if (form == null)
             throw new ArgumentNullException(nameof(form), "Registration form cannot be null.");
+
         if (string.IsNullOrWhiteSpace(form.CustomerName))
-            throw new ArgumentException("Customer name is required.", nameof(form.CustomerName));
+            throw new ArgumentException("Customer name is required.", nameof(form)); 
 
         var customer = new CustomerEntity
         {
             CustomerName = form.CustomerName,
-            CustomerContacts = [] 
+            CustomerContacts = []
         };
 
-        // Creates the CustomerContactEntity and link it to Customer
+        // Creates the CustomerContactEntity and links it to Customer
         var contact = new CustomerContactEntity
         {
             FirstName = form.FirstName,
@@ -33,3 +34,5 @@ public static class CustomerRegistrationFactory
         return customer;
     }
 }
+
+

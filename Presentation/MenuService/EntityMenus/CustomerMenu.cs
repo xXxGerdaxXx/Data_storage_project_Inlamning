@@ -3,14 +3,9 @@ using Data_storage_project_library.Interfaces;
 
 namespace Presentation.MenuService.EntityMenus;
 
-public class CustomerMenu
+public class CustomerMenu(ICustomerService customerService)
 {
-    private readonly ICustomerService _customerService;
-
-    public CustomerMenu(ICustomerService customerService)
-    {
-        _customerService = customerService; 
-    }
+    private readonly ICustomerService _customerService = customerService;
 
     public async Task RunAsync()
     {
@@ -134,7 +129,7 @@ public class CustomerMenu
         Console.Clear();
         Console.WriteLine("=== Update Customer ===");
 
-        Console.Write("Enter Customer ID to update: ");
+        Console.Write("Enter Customer ID: ");
         if (!int.TryParse(Console.ReadLine(), out int customerId))
         {
             Console.WriteLine("Invalid ID. Press any key to return...");
@@ -142,25 +137,51 @@ public class CustomerMenu
             return;
         }
 
-        Console.Write("Enter new Customer Name: ");
-        var customerName = Console.ReadLine()?.Trim();
-
-        if (string.IsNullOrWhiteSpace(customerName))
+        var existingCustomer = await _customerService.GetCustomerByIdAsync(customerId);
+        if (existingCustomer == null)
         {
-            Console.WriteLine("Error: Customer name is required. Press any key to return...");
+            Console.WriteLine("Customer not found. Press any key to return...");
             Console.ReadKey();
             return;
         }
 
+        // Edit customer details
+        Console.Write($"Enter New Customer Name (Current: {existingCustomer.CustomerName}): ");
+        var customerName = Console.ReadLine()?.Trim();
+        customerName = string.IsNullOrWhiteSpace(customerName) ? existingCustomer.CustomerName : customerName;
+
+        var contact = existingCustomer.CustomerContacts.FirstOrDefault();
+
+        Console.Write($"Enter New First Name (Current: {contact?.FirstName ?? "None"}): ");
+        var firstName = Console.ReadLine()?.Trim();
+        firstName = string.IsNullOrWhiteSpace(firstName) ? contact?.FirstName ?? "" : firstName;
+
+        Console.Write($"Enter New Last Name (Current: {contact?.LastName ?? "None"}): ");
+        var lastName = Console.ReadLine()?.Trim();
+        lastName = string.IsNullOrWhiteSpace(lastName) ? contact?.LastName ?? "" : lastName;
+
+        Console.Write($"Enter New Email (Current: {contact?.Email ?? "None"}): ");
+        var email = Console.ReadLine()?.Trim();
+        email = string.IsNullOrWhiteSpace(email) ? contact?.Email ?? "" : email;
+
+        Console.Write($"Enter New Phone Number (Current: {contact?.Phone ?? "None"}): ");
+        var phone = Console.ReadLine()?.Trim();
+        phone = string.IsNullOrWhiteSpace(phone) ? contact?.Phone ?? "" : phone;
+
         var form = new CustomerRegistrationForm
         {
-            CustomerName = customerName
+            CustomerName = customerName,
+            FirstName = firstName,
+            LastName = lastName,
+            Email = email,
+            PhoneNumber = phone
         };
 
         var updatedCustomer = await _customerService.UpdateCustomerAsync(customerId, form);
         Console.WriteLine(updatedCustomer != null ? "Customer updated successfully!" : "Error updating customer.");
         Console.ReadKey();
     }
+
 
     private async Task DeleteCustomerAsync()
     {

@@ -10,16 +10,9 @@ using System.Threading.Tasks;
 
 namespace Data_storage_project_library.Repositories
 {
-    public class ProjectRepository : BaseRepository<ProjectEntity>
+    public class ProjectRepository(ApplicationDbContext context) : BaseRepository<ProjectEntity>(context)
     {
-        private readonly ApplicationDbContext _context;
-
-       
-
-        public ProjectRepository(ApplicationDbContext context) : base(context)
-        {
-            _context = context;
-        }
+        private readonly ApplicationDbContext _context = context;
 
         public async Task<ProjectEntity?> GetLastProjectAsync()
         {
