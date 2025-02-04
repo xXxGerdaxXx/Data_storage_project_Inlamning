@@ -68,8 +68,14 @@ public class ProjectMenu(
         {
             foreach (var project in projects)
             {
-                Console.WriteLine($"ID: {project?.Id}, Title: {project?.Title ?? "Unknown"}, Start Date: {project?.StartDate.ToShortDateString()}");
+                string statusCompleted = project?.Status?.IsCompleted == true ? "Completed" : "Not Completed";
+                string endDate = project?.EndDate?.ToShortDateString() ?? "Not Set";
+
+                Console.WriteLine($"ID: {project?.Id}, Title: {project?.Title}, Start Date: {project?.StartDate.ToShortDateString()}, End Date: {endDate}, Status: {statusCompleted}, Service Id: {project?.ServiceId}");
             }
+
+
+
         }
 
         Console.WriteLine("\nPress any key to return...");
@@ -269,7 +275,16 @@ public class ProjectMenu(
             serviceId = existingProject.ServiceId;
         }
 
-        // Step 4: Create the update form
+        // Step 4: Handle EndDate based on status
+        DateTime? endDate = existingProject.EndDate; // Preserve existing EndDate if already set
+
+        var selectedStatus = statuses.FirstOrDefault(s => s.Id == statusId);
+        if (selectedStatus != null && selectedStatus.Name == "Completed" && existingProject.EndDate == null)
+        {
+            endDate = DateTime.UtcNow; // Set EndDate only if it was previously null
+        }
+
+        // Step 5: Create the update form
         var form = new ProjectRegistrationForm
         {
             Title = title,
@@ -278,14 +293,16 @@ public class ProjectMenu(
             CustomerId = customerId,
             StatusId = statusId,
             EmployeeId = employeeId,
-            ServiceId = serviceId
+            ServiceId = serviceId,
+            EndDate = endDate // Include EndDate in the update form
         };
 
-        // Step 5: Update the project
+        // Step 6: Update the project
         var updatedProject = await _projectService.UpdateProjectAsync(projectIdString, form);
         Console.WriteLine(updatedProject != null ? "Project updated successfully!" : "Error updating project.");
         Console.ReadKey();
     }
+
 
 
 

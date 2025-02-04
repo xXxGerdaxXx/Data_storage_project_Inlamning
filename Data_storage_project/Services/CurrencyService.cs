@@ -14,14 +14,23 @@ public class CurrencyService(IBaseRepository<CurrencyEntity> currencyRepository)
         if (form == null)
             throw new ArgumentNullException(nameof(form), "Currency registration form cannot be null.");
 
-        // Check if currency already exists
-        var existingCurrency = await _currencyRepository.GetAsync(c => c.Code == form.Code);
-        if (existingCurrency != null)
-            throw new ArgumentException("Currency code already exists.");
+        // Normalize the code for consistency
+        var normalizedCode = form.Code.ToUpper();
 
-        var currency = CurrencyRegistrationFactory.CreateCurrency(form);
+        // Check if the currency already exists
+        var existingCurrency = await _currencyRepository.GetAsync(c => c.Code == normalizedCode);
+        if (existingCurrency != null)
+            throw new ArgumentException($"Currency with code '{normalizedCode}' already exists.");
+
+        var currency = CurrencyRegistrationFactory.CreateCurrency(new CurrencyRegistrationForm
+        {
+            Code = normalizedCode,
+            Name = form.Name
+        });
+
         return await _currencyRepository.CreateAsync(currency);
     }
+
 
     public async Task<IEnumerable<CurrencyEntity>> GetAllCurrenciesAsync()
     {
@@ -30,24 +39,47 @@ public class CurrencyService(IBaseRepository<CurrencyEntity> currencyRepository)
 
     public async Task<CurrencyEntity?> GetCurrencyByIdAsync(int currencyId)
     {
-        return await _currencyRepository.GetAsync(c => c.Id == currencyId);
+        var currency = await _currencyRepository.GetAsync(c => c.Id == currencyId);
+        if (currency == null)
+            throw new KeyNotFoundException($"Currency with ID {currencyId} not found.");
+
+        return currency;
     }
 
     public async Task<CurrencyEntity?> UpdateCurrencyAsync(int currencyId, CurrencyRegistrationForm form)
     {
+        if (form == null)
+            throw new ArgumentNullException(nameof(form), "Currency registration form cannot be null.");
+
         var existingCurrency = await _currencyRepository.GetAsync(c => c.Id == currencyId);
         if (existingCurrency == null)
             throw new KeyNotFoundException($"Currency with ID {currencyId} not found.");
 
-        existingCurrency.Code = form.Code;
+        // Normalize the code for consistency
+        var normalizedCode = form.Code.ToUpper();
+
+        // Check if another currency with the same code already exists
+        var duplicateCurrency = await _currencyRepository.GetAsync(c => c.Code == normalizedCode && c.Id != currencyId);
+        if (duplicateCurrency != null)
+            throw new ArgumentException($"Another currency with code '{normalizedCode}' already exists.");
+
+        existingCurrency.Code = normalizedCode;
         existingCurrency.Name = form.Name;
 
         return await _currencyRepository.UpdateAsync(existingCurrency, c => c.Id == currencyId);
     }
 
 
+
     public async Task<bool> DeleteCurrencyAsync(int currencyId)
     {
+        // Checking if the currency exists
+        var currency = await _currencyRepository.GetAsync(c => c.Id == currencyId);
+        if (currency == null)
+            throw new KeyNotFoundException($"Currency with ID {currencyId} not found.");
+
+        // Could add a a check for dependencies, need to come back to it
+
         return await _currencyRepository.DeleteAsync(c => c.Id == currencyId);
     }
 }

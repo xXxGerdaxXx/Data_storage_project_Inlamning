@@ -35,7 +35,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
         modelBuilder.Entity<ServiceEntity>()
             .HasOne(s => s.Currency)
-            .WithMany()
+            .WithMany(c => c.Services)
             .HasForeignKey(s => s.CurrencyId)
             .OnDelete(DeleteBehavior.Restrict);
 

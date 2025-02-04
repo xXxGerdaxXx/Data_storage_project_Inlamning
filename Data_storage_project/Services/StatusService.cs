@@ -39,10 +39,7 @@ public class StatusService(IBaseRepository<StatusTypeEntity> statusRepository) :
 
     public async Task<StatusTypeEntity?> UpdateStatusAsync(int statusId, StatusRegistrationForm form)
     {
-        var existingStatus = await _statusRepository.GetAsync(s => s.Id == statusId);
-        if (existingStatus == null)
-            throw new KeyNotFoundException($"Status with ID {statusId} not found.");
-
+        var existingStatus = await _statusRepository.GetAsync(s => s.Id == statusId) ?? throw new KeyNotFoundException($"Status with ID {statusId} not found.");
         existingStatus.Name = form.Name;
 
         return await _statusRepository.UpdateAsync(existingStatus, s => s.Id == statusId);

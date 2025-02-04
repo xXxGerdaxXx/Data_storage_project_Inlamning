@@ -7,9 +7,11 @@ using System.Linq.Expressions;
 
 namespace Data_storage_project_library.Services;
 
-public class ProjectService(ProjectRepository repository) : IProjectService
+public class ProjectService(ProjectRepository repository, StatusService statusService) : IProjectService
 {
     private readonly ProjectRepository _projectRepository = repository;
+    private readonly StatusService _statusService = statusService;
+
 
     public async Task<ProjectEntity?> RegisterProjectAsync(ProjectRegistrationForm form)
     {
@@ -34,8 +36,16 @@ public class ProjectService(ProjectRepository repository) : IProjectService
 
     public async Task<IEnumerable<ProjectEntity>> GetAllProjectsAsync()
     {
-        return await _projectRepository.GetAllAsync(); 
+        var projects = await _projectRepository.GetAllAsync();
+
+        foreach (var project in projects)
+        {
+            project.Status = await _statusService.GetStatusByIdAsync(project.StatusId);
+        }
+
+        return projects;
     }
+
 
     public async Task<bool> DeleteProjectAsync(string projectId)
     {
@@ -54,10 +64,18 @@ public class ProjectService(ProjectRepository repository) : IProjectService
         var existingProject = await _projectRepository.GetAsync(p => p.Id == projectId)
             ?? throw new KeyNotFoundException($"Project with ID {projectId} not found.");
 
+        // Retrieve status information
+        var status = await _statusService.GetStatusByIdAsync(form.StatusId) ?? throw new KeyNotFoundException($"Status with ID {form.StatusId} not found.");
+
+        // Preserve existing EndDate if the project was already completed
+        if (status.Name == "Completed" && existingProject.EndDate == null)
+        {
+            existingProject.EndDate = DateTime.UtcNow; // Set EndDate automatically
+        }
+
         existingProject.Title = form.Title;
         existingProject.Description = form.Description;
         existingProject.StartDate = form.StartDate;
-        existingProject.EndDate = form.EndDate;
         existingProject.CustomerId = form.CustomerId;
         existingProject.StatusId = form.StatusId;
         existingProject.EmployeeId = form.EmployeeId;
@@ -65,6 +83,7 @@ public class ProjectService(ProjectRepository repository) : IProjectService
 
         return await _projectRepository.UpdateAsync(existingProject, p => p.Id == projectId);
     }
+
 
 
     private async Task<string> GenerateProjectIdAsync()

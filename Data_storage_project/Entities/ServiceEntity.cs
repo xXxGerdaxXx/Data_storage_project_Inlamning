@@ -20,9 +20,9 @@ public class ServiceEntity
 
     // Foreign Key to Currency
     [Required]
+    [ForeignKey("Currency")] // Ensures EF knows CurrencyId maps to CurrencyEntity
     public int CurrencyId { get; set; }
 
-    [ForeignKey(nameof(CurrencyId))]
-    public CurrencyEntity Currency { get; set; } = null!;
+    public virtual CurrencyEntity Currency { get; set; } = null!;
 }
 

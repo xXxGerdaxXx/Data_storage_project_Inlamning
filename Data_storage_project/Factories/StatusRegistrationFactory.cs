@@ -12,7 +12,8 @@ public static class StatusRegistrationFactory
 
         return new StatusTypeEntity
         {
-            Name = form.Name
+            Name = form.Name,
+            IsCompleted = form.Name.Equals("Completed", StringComparison.OrdinalIgnoreCase) // Automatically set IsCompleted
         };
     }
 }

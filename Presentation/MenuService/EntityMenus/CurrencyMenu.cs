@@ -160,13 +160,36 @@ public class CurrencyMenu
         Console.Write("Enter Currency ID to delete: ");
         if (!int.TryParse(Console.ReadLine(), out int currencyId))
         {
-            Console.WriteLine("Invalid ID. Press any key to return...");
+            Console.WriteLine("Invalid ID. Please enter a valid numeric ID. Press any key to return...");
             Console.ReadKey();
             return;
         }
 
-        var success = await _currencyService.DeleteCurrencyAsync(currencyId);
-        Console.WriteLine(success ? "Currency deleted successfully!" : "Currency not found.");
-        Console.ReadKey();
+        try
+        {
+            // Check if the currency exists
+            var currency = await _currencyService.GetCurrencyByIdAsync(currencyId);
+            if (currency == null)
+            {
+                Console.WriteLine($"Currency with ID {currencyId} not found. Press any key to return...");
+                Console.ReadKey();
+                return;
+            }
+
+            // Attempt to delete the currency
+            var success = await _currencyService.DeleteCurrencyAsync(currencyId);
+            Console.WriteLine(success
+                ? "Currency deleted successfully!"
+                : "Error deleting currency. It may be referenced by other entities.");
+
+            Console.ReadKey();
+        }
+        catch (Exception ex)
+        {
+            // Handle unexpected exceptions
+            Console.WriteLine($"An error occurred: {ex.Message}");
+            Console.ReadKey();
+        }
     }
+
 }

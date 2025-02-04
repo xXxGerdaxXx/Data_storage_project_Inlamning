@@ -32,7 +32,7 @@ public class ProjectEntity
     public int StatusId { get; set; }
 
     [ForeignKey(nameof(StatusId))]
-    public StatusTypeEntity Status { get; set; } = null!;
+    public StatusTypeEntity? Status { get; set; } = null!;
 
     [Required]
     public int EmployeeId { get; set; }

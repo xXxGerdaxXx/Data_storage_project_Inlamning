@@ -9,5 +9,7 @@ public class StatusTypeEntity
 
     [Required]
     [StringLength(50, ErrorMessage = "Status name cannot exceed 50 characters.")]
-    public string Name { get; set; } = null!; // Example: Pending, Completed, Cancelled
+    public string Name { get; set; } = null!; 
+
+    public bool IsCompleted { get; set; }
 }

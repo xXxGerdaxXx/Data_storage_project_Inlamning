@@ -12,7 +12,7 @@ public static class CurrencyRegistrationFactory
 
         return new CurrencyEntity
         {
-            Code = form.Code.ToUpper(), // Ensures uppercase codes
+            Code = form.Code.ToUpper(), 
             Name = form.Name
         };
     }
