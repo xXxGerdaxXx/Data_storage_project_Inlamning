@@ -3,14 +3,9 @@ using Data_storage_project_library.Interfaces;
 
 namespace Presentation.MenuService.EntityMenus;
 
-public class RoleMenu
+public class RoleMenu(IRoleService roleService)
 {
-    private readonly IRoleService _roleService;
-
-    public RoleMenu(IRoleService roleService)
-    {
-        _roleService = roleService;
-    }
+    private readonly IRoleService _roleService = roleService;
 
     public async Task RunAsync()
     {

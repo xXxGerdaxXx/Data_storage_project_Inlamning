@@ -35,33 +35,31 @@ public class BaseRepository<T> : IBaseRepository<T> where T : class
         }
     }
 
-    public async Task<IEnumerable<T>> GetAllAsync()
+    public async Task<IEnumerable<T>> GetAllAsync(params Expression<Func<T, object>>[] includeProperties)
     {
-        try
+        IQueryable<T> query = _dbSet;
+
+        foreach (var includeProperty in includeProperties)
         {
-            return await _dbSet.ToListAsync();
+            query = query.Include(includeProperty); // Eagerly load specified properties
         }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Error fetching all entities: {ex.Message}");
-            return [];
-        }
+
+        return await query.ToListAsync();
     }
 
-    public async Task<T?> GetAsync(Expression<Func<T, bool>> expression)
+    public async Task<T?> GetAsync(Expression<Func<T, bool>> expression, params Expression<Func<T, object>>[] includeProperties)
     {
-        if (expression == null) return null;
+        IQueryable<T> query = _dbSet;
 
-        try
+        foreach (var includeProperty in includeProperties)
         {
-            return await _dbSet.FirstOrDefaultAsync(expression);
+            query = query.Include(includeProperty); // Eagerly load specified properties
         }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Error fetching entity: {ex.Message}");
-            return null;
-        }
+
+        return await query.FirstOrDefaultAsync(expression);
     }
+
+
 
     public async Task<T?> UpdateAsync(T entity, Expression<Func<T, bool>> identifierExpression)
     {

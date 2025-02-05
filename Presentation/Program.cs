@@ -1,4 +1,5 @@
 ﻿using Data_storage_project_library.Contexts;
+using Data_storage_project_library.Entities;
 using Data_storage_project_library.Interfaces;
 using Data_storage_project_library.Repositories;
 using Data_storage_project_library.Services;
@@ -15,8 +16,12 @@ var services = new ServiceCollection()
     .AddScoped<ICustomerService, CustomerService>()
     .AddScoped<ProjectRepository>()
     .AddScoped<CustomerRepository>()
+    .AddScoped<EmployeeRepository>()
+    .AddScoped<RoleRepository>()
+    .AddScoped<ServiceRepository>()
     .AddScoped<IEmployeeService, EmployeeService>()
     .AddScoped<IProjectService, ProjectService>()
+    .AddScoped<IBaseRepository<ServiceEntity>, BaseRepository<ServiceEntity>>()
     .AddScoped<StatusService>() 
     .AddScoped<IStatusService, StatusService>()
     .AddScoped<ICurrencyService, CurrencyService>()

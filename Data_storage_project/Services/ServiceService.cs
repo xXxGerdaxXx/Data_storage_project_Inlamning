@@ -4,14 +4,9 @@ using Data_storage_project_library.Interfaces;
 
 namespace Data_storage_project_library.Services;
 
-public class ServiceService : IServiceService
+public class ServiceService(IBaseRepository<ServiceEntity> serviceRepository) : IServiceService
 {
-    private readonly IBaseRepository<ServiceEntity> _serviceRepository;
-
-    public ServiceService(IBaseRepository<ServiceEntity> serviceRepository)
-    {
-        _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
-    }
+    private readonly IBaseRepository<ServiceEntity> _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
 
     public async Task<ServiceEntity?> RegisterServiceAsync(ServiceRegistrationForm form)
     {
@@ -30,20 +25,17 @@ public class ServiceService : IServiceService
 
     public async Task<IEnumerable<ServiceEntity>> GetAllServicesAsync()
     {
-        return await _serviceRepository.GetAllAsync();
+        return await _serviceRepository.GetAllAsync(s => s.Currency);
     }
 
     public async Task<ServiceEntity?> GetServiceByIdAsync(int serviceId)
     {
-        return await _serviceRepository.GetAsync(s => s.Id == serviceId);
+        return await _serviceRepository.GetAsync(s => s.Id == serviceId, s => s.Currency);
     }
 
     public async Task<ServiceEntity?> UpdateServiceAsync(int serviceId, ServiceRegistrationForm form)
     {
-        var existingService = await _serviceRepository.GetAsync(s => s.Id == serviceId);
-        if (existingService == null)
-            throw new KeyNotFoundException($"Service with ID {serviceId} not found.");
-
+        var existingService = await _serviceRepository.GetAsync(s => s.Id == serviceId) ?? throw new KeyNotFoundException($"Service with ID {serviceId} not found.");
         existingService.ServiceName = form.ServiceName;
         existingService.Price = form.Price;
         existingService.CurrencyId = form.CurrencyId;

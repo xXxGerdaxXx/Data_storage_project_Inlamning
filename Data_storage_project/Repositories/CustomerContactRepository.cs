@@ -8,12 +8,7 @@ using System.Threading.Tasks;
 
 namespace Data_storage_project_library.Repositories;
 
-public class CustomerContactRepository : BaseRepository<CustomerContactEntity>
+public class CustomerContactRepository(ApplicationDbContext context) : BaseRepository<CustomerContactEntity>(context)
 {
-    private readonly ApplicationDbContext _context;
-
-    public CustomerContactRepository(ApplicationDbContext context) : base(context)
-    {
-        _context = context;
-    }
+    private readonly ApplicationDbContext _context = context;
 }

@@ -8,16 +8,7 @@ using System.Threading.Tasks;
 
 namespace Data_storage_project_library.Repositories;
 
-public class StatusTypeRepository : BaseRepository<StatusTypeEntity>
+public class StatusTypeRepository(ApplicationDbContext context) : BaseRepository<StatusTypeEntity>(context)
 {
-    private readonly ApplicationDbContext _context;
-
-
-
-    public StatusTypeRepository(ApplicationDbContext context) : base(context)
-    {
-        _context = context;
-    }
-
-
+    private readonly ApplicationDbContext _context = context;
 }

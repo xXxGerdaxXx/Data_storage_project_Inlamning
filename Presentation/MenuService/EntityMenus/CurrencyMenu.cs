@@ -3,14 +3,9 @@ using Data_storage_project_library.Interfaces;
 
 namespace Presentation.MenuService.EntityMenus;
 
-public class CurrencyMenu
+public class CurrencyMenu(ICurrencyService currencyService)
 {
-    private readonly ICurrencyService _currencyService;
-
-    public CurrencyMenu(ICurrencyService currencyService)
-    {
-        _currencyService = currencyService; 
-    }
+    private readonly ICurrencyService _currencyService = currencyService;
 
     public async Task RunAsync()
     {
@@ -64,7 +59,7 @@ public class CurrencyMenu
         {
             foreach (var currency in currencies)
             {
-                Console.WriteLine($"ID: {currency?.Id}, Code: {currency?.Code ?? "Unknown"}, Name: {currency?.Name ?? "Unknown"}");
+                Console.WriteLine($"ID: {currency?.Id}, Code: {currency?.Code}, Name: {currency?.Name }");
             }
         }
 

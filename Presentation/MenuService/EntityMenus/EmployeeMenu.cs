@@ -4,14 +4,9 @@ using Data_storage_project_library.Entities;
 
 namespace Presentation.MenuService.EntityMenus;
 
-public class EmployeeMenu
+public class EmployeeMenu(IEmployeeService employeeService)
 {
-    private readonly IEmployeeService _employeeService;
-
-    public EmployeeMenu(IEmployeeService employeeService)
-    {
-        _employeeService = employeeService; 
-    }
+    private readonly IEmployeeService _employeeService = employeeService;
 
     public async Task RunAsync()
     {
@@ -57,7 +52,7 @@ public class EmployeeMenu
         Console.WriteLine("=== All Employees ===");
 
         var employees = await _employeeService.GetAllEmployeesAsync();
-        if (employees == null || !employees.Any()) 
+        if (!employees.Any())
         {
             Console.WriteLine("No employees found.");
         }
@@ -65,7 +60,7 @@ public class EmployeeMenu
         {
             foreach (var employee in employees)
             {
-                Console.WriteLine($"ID: {employee?.Id}, Name: {employee?.FirstName ?? "Unknown"} {employee?.LastName ?? "Unknown"}, Email: {employee?.Email ?? "N/A"}");
+                Console.WriteLine($"ID: {employee.Id}, Name: {employee.FirstName} {employee.LastName}, Email: {employee.Email}, Role: {employee.Role.RoleName}");
             }
         }
 
@@ -108,6 +103,14 @@ public class EmployeeMenu
             return;
         }
 
+        // Display available roles
+        Console.WriteLine("\n=== Available Roles ===");
+        var roles = await _employeeService.GetAllRolesAsync();
+        foreach (var role in roles)
+        {
+            Console.WriteLine($"ID: {role.Id}, Name: {role.RoleName}");
+        }
+
         Console.Write("Enter Role ID: ");
         if (!int.TryParse(Console.ReadLine(), out int roleId))
         {
@@ -134,6 +137,7 @@ public class EmployeeMenu
         Console.Clear();
         Console.WriteLine("=== Update Employee ===");
 
+        // Step 1: Prompt user to enter the numeric employee ID
         Console.Write("Enter Employee ID to update: ");
         if (!int.TryParse(Console.ReadLine(), out int employeeId))
         {
@@ -142,42 +146,40 @@ public class EmployeeMenu
             return;
         }
 
-        Console.Write("Enter New First Name: ");
+        // Retrieve the existing employee
+        var existingEmployee = await _employeeService.GetEmployeeByIdAsync(employeeId);
+        if (existingEmployee == null)
+        {
+            Console.WriteLine("Employee not found. Press any key to return...");
+            Console.ReadKey();
+            return;
+        }
+
+        // Step 2: Pre-fill data and allow user to modify fields
+        Console.Write($"Enter New First Name (Current: {existingEmployee.FirstName}): ");
         var firstName = Console.ReadLine()?.Trim();
+        firstName = string.IsNullOrWhiteSpace(firstName) ? existingEmployee.FirstName : firstName;
 
-        if (string.IsNullOrWhiteSpace(firstName))
-        {
-            Console.WriteLine("Error: First Name is required. Press any key to return...");
-            Console.ReadKey();
-            return;
-        }
-
-        Console.Write("Enter New Last Name: ");
+        Console.Write($"Enter New Last Name (Current: {existingEmployee.LastName}): ");
         var lastName = Console.ReadLine()?.Trim();
+        lastName = string.IsNullOrWhiteSpace(lastName) ? existingEmployee.LastName : lastName;
 
-        if (string.IsNullOrWhiteSpace(lastName))
-        {
-            Console.WriteLine("Error: Last Name is required. Press any key to return...");
-            Console.ReadKey();
-            return;
-        }
-
-        Console.Write("Enter New Email: ");
+        Console.Write($"Enter New Email (Current: {existingEmployee.Email}): ");
         var email = Console.ReadLine()?.Trim();
+        email = string.IsNullOrWhiteSpace(email) ? existingEmployee.Email : email;
 
-        if (string.IsNullOrWhiteSpace(email))
+        // Display available roles
+        Console.WriteLine("\n=== Available Roles ===");
+        var roles = await _employeeService.GetAllRolesAsync();
+        foreach (var role in roles)
         {
-            Console.WriteLine("Error: Email is required. Press any key to return...");
-            Console.ReadKey();
-            return;
+            Console.WriteLine($"ID: {role.Id}, Name: {role.RoleName}");
         }
 
-        Console.Write("Enter New Role ID: ");
+        Console.Write($"Select Role ID (Current: {existingEmployee.RoleId}): ");
         if (!int.TryParse(Console.ReadLine(), out int roleId))
         {
-            Console.WriteLine("Invalid Role ID. Press any key to return...");
-            Console.ReadKey();
-            return;
+            roleId = existingEmployee.RoleId;
         }
 
         var form = new EmployeeRegistrationForm
@@ -192,6 +194,7 @@ public class EmployeeMenu
         Console.WriteLine(updatedEmployee != null ? "Employee updated successfully!" : "Error updating employee.");
         Console.ReadKey();
     }
+
 
     private async Task DeleteEmployeeAsync()
     {

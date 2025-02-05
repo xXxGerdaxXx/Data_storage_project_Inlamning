@@ -18,9 +18,8 @@ public class ServiceEntity
     [Range(0.01, 9999999.99, ErrorMessage = "Price must be greater than 0.")]
     public decimal Price { get; set; }
 
-    // Foreign Key to Currency
     [Required]
-    [ForeignKey("Currency")] // Ensures EF knows CurrencyId maps to CurrencyEntity
+    [ForeignKey("Currency")] 
     public int CurrencyId { get; set; }
 
     public virtual CurrencyEntity Currency { get; set; } = null!;

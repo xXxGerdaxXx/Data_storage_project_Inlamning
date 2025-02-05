@@ -8,16 +8,7 @@ using System.Threading.Tasks;
 
 namespace Data_storage_project_library.Repositories;
 
-public class RoleRepository : BaseRepository<RoleEntity>
+public class RoleRepository(ApplicationDbContext context) : BaseRepository<RoleEntity>(context)
 {
-    private readonly ApplicationDbContext _context;
-
-
-
-    public RoleRepository(ApplicationDbContext context) : base(context)
-    {
-        _context = context;
-    }
-
-
+    private readonly ApplicationDbContext _context = context;
 }
