@@ -137,7 +137,20 @@ public class EmployeeMenu(IEmployeeService employeeService)
         Console.Clear();
         Console.WriteLine("=== Update Employee ===");
 
-        // Step 1: Prompt user to enter the numeric employee ID
+        var employees = await _employeeService.GetAllEmployeesAsync();
+        if (!employees.Any())
+        {
+            Console.WriteLine("No employees found.");
+            Console.ReadKey();
+            return;
+        }
+
+        Console.WriteLine("\nAvailable Employees:");
+        foreach (var employee in employees)
+        {
+            Console.WriteLine($"ID: {employee.Id}, Name: {employee.FirstName} {employee.LastName}, Email: {employee.Email}, Role: {employee.Role.RoleName}");
+        }
+
         Console.Write("Enter Employee ID to update: ");
         if (!int.TryParse(Console.ReadLine(), out int employeeId))
         {
@@ -146,7 +159,6 @@ public class EmployeeMenu(IEmployeeService employeeService)
             return;
         }
 
-        // Retrieve the existing employee
         var existingEmployee = await _employeeService.GetEmployeeByIdAsync(employeeId);
         if (existingEmployee == null)
         {
@@ -155,7 +167,6 @@ public class EmployeeMenu(IEmployeeService employeeService)
             return;
         }
 
-        // Step 2: Pre-fill data and allow user to modify fields
         Console.Write($"Enter New First Name (Current: {existingEmployee.FirstName}): ");
         var firstName = Console.ReadLine()?.Trim();
         firstName = string.IsNullOrWhiteSpace(firstName) ? existingEmployee.FirstName : firstName;
@@ -168,7 +179,6 @@ public class EmployeeMenu(IEmployeeService employeeService)
         var email = Console.ReadLine()?.Trim();
         email = string.IsNullOrWhiteSpace(email) ? existingEmployee.Email : email;
 
-        // Display available roles
         Console.WriteLine("\n=== Available Roles ===");
         var roles = await _employeeService.GetAllRolesAsync();
         foreach (var role in roles)
@@ -195,11 +205,24 @@ public class EmployeeMenu(IEmployeeService employeeService)
         Console.ReadKey();
     }
 
-
     private async Task DeleteEmployeeAsync()
     {
         Console.Clear();
         Console.WriteLine("=== Delete Employee ===");
+
+        var employees = await _employeeService.GetAllEmployeesAsync();
+        if (!employees.Any())
+        {
+            Console.WriteLine("No employees found.");
+            Console.ReadKey();
+            return;
+        }
+
+        Console.WriteLine("\nAvailable Employees:");
+        foreach (var employee in employees)
+        {
+            Console.WriteLine($"ID: {employee.Id}, Name: {employee.FirstName} {employee.LastName}, Email: {employee.Email}, Role: {employee.Role.RoleName}");
+        }
 
         Console.Write("Enter Employee ID to delete: ");
         if (!int.TryParse(Console.ReadLine(), out int employeeId))

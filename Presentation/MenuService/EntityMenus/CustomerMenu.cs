@@ -129,7 +129,23 @@ public class CustomerMenu(ICustomerService customerService)
         Console.Clear();
         Console.WriteLine("=== Update Customer ===");
 
-        Console.Write("Enter Customer ID: ");
+        // Display all customers
+        var customers = await _customerService.GetAllCustomersAsync();
+        if (customers == null || !customers.Any())
+        {
+            Console.WriteLine("No customers found.");
+            Console.WriteLine("Press any key to return...");
+            Console.ReadKey();
+            return;
+        }
+
+        Console.WriteLine("\nAvailable Customers:");
+        foreach (var customer in customers)
+        {
+            Console.WriteLine($"ID: {customer.Id}, Name: {customer.CustomerName}");
+        }
+
+        Console.Write("\nEnter Customer ID to update: ");
         if (!int.TryParse(Console.ReadLine(), out int customerId))
         {
             Console.WriteLine("Invalid ID. Press any key to return...");
@@ -183,12 +199,29 @@ public class CustomerMenu(ICustomerService customerService)
     }
 
 
+
     private async Task DeleteCustomerAsync()
     {
         Console.Clear();
         Console.WriteLine("=== Delete Customer ===");
 
-        Console.Write("Enter Customer ID to delete: ");
+        // Display all customers
+        var customers = await _customerService.GetAllCustomersAsync();
+        if (customers == null || !customers.Any())
+        {
+            Console.WriteLine("No customers found.");
+            Console.WriteLine("Press any key to return...");
+            Console.ReadKey();
+            return;
+        }
+
+        Console.WriteLine("\nAvailable Customers:");
+        foreach (var customer in customers)
+        {
+            Console.WriteLine($"ID: {customer.Id}, Name: {customer.CustomerName}");
+        }
+
+        Console.Write("\nEnter Customer ID to delete: ");
         if (!int.TryParse(Console.ReadLine(), out int customerId))
         {
             Console.WriteLine("Invalid ID. Press any key to return...");
@@ -200,4 +233,5 @@ public class CustomerMenu(ICustomerService customerService)
         Console.WriteLine(success ? "Customer deleted successfully!" : "Customer not found.");
         Console.ReadKey();
     }
+
 }

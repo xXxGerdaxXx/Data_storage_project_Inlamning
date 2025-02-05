@@ -189,7 +189,18 @@ public class ProjectMenu(
     {
         Console.Clear();
         Console.WriteLine("=== Update Project ===");
-
+        var projects = await _projectService.GetAllProjectsAsync();
+        if (!projects.Any())
+        {
+            Console.WriteLine("No projects available.");
+            Console.ReadKey();
+            return;
+        }
+        Console.WriteLine("\nAvailable Projects:");
+        foreach (var project in projects)
+        {
+            Console.WriteLine($"ID: {project.Id}, Title: {project.Title}");
+        }
         // Step 1: Prompt user to enter the numeric project ID
         Console.Write("Enter Project ID (numeric only): ");
         if (!int.TryParse(Console.ReadLine(), out int projectId))

@@ -97,7 +97,23 @@ public class RoleMenu(IRoleService roleService)
         Console.Clear();
         Console.WriteLine("=== Update Role ===");
 
-        Console.Write("Enter Role ID to update: ");
+        // Display all roles
+        var roles = await _roleService.GetAllRolesAsync();
+        if (roles == null || !roles.Any())
+        {
+            Console.WriteLine("No roles found.");
+            Console.WriteLine("Press any key to return...");
+            Console.ReadKey();
+            return;
+        }
+
+        Console.WriteLine("\nAvailable Roles:");
+        foreach (var role in roles)
+        {
+            Console.WriteLine($"ID: {role.Id}, Name: {role.RoleName}");
+        }
+
+        Console.Write("\nEnter Role ID to update: ");
         if (!int.TryParse(Console.ReadLine(), out int roleId))
         {
             Console.WriteLine("Invalid ID. Press any key to return...");
@@ -125,12 +141,29 @@ public class RoleMenu(IRoleService roleService)
         Console.ReadKey();
     }
 
+
     private async Task DeleteRoleAsync()
     {
         Console.Clear();
         Console.WriteLine("=== Delete Role ===");
 
-        Console.Write("Enter Role ID to delete: ");
+        // Display all roles
+        var roles = await _roleService.GetAllRolesAsync();
+        if (roles == null || !roles.Any())
+        {
+            Console.WriteLine("No roles found.");
+            Console.WriteLine("Press any key to return...");
+            Console.ReadKey();
+            return;
+        }
+
+        Console.WriteLine("\nAvailable Roles:");
+        foreach (var role in roles)
+        {
+            Console.WriteLine($"ID: {role.Id}, Name: {role.RoleName}");
+        }
+
+        Console.Write("\nEnter Role ID to delete: ");
         if (!int.TryParse(Console.ReadLine(), out int roleId))
         {
             Console.WriteLine("Invalid ID. Press any key to return...");
@@ -142,4 +175,5 @@ public class RoleMenu(IRoleService roleService)
         Console.WriteLine(success ? "Role deleted successfully!" : "Role not found.");
         Console.ReadKey();
     }
+
 }

@@ -108,7 +108,23 @@ public class CurrencyMenu(ICurrencyService currencyService)
         Console.Clear();
         Console.WriteLine("=== Update Currency ===");
 
-        Console.Write("Enter Currency ID to update: ");
+        // Display all currencies before prompting for ID
+        var currencies = await _currencyService.GetAllCurrenciesAsync();
+        if (!currencies.Any())
+        {
+            Console.WriteLine("No currencies found.");
+            Console.WriteLine("Press any key to return...");
+            Console.ReadKey();
+            return;
+        }
+
+        Console.WriteLine("\nAvailable Currencies:");
+        foreach (var currency in currencies)
+        {
+            Console.WriteLine($"ID: {currency.Id}, Code: {currency.Code}, Name: {currency.Name}");
+        }
+
+        Console.Write("\nEnter Currency ID to update: ");
         if (!int.TryParse(Console.ReadLine(), out int currencyId))
         {
             Console.WriteLine("Invalid ID. Press any key to return...");
@@ -116,25 +132,22 @@ public class CurrencyMenu(ICurrencyService currencyService)
             return;
         }
 
-        Console.Write("Enter New Currency Code: ");
+        // Fetch existing currency for preview
+        var existingCurrency = await _currencyService.GetCurrencyByIdAsync(currencyId);
+        if (existingCurrency == null)
+        {
+            Console.WriteLine($"Currency with ID {currencyId} not found. Press any key to return...");
+            Console.ReadKey();
+            return;
+        }
+
+        Console.Write($"Enter New Currency Code (Current: {existingCurrency.Code}): ");
         var currencyCode = Console.ReadLine()?.Trim();
+        currencyCode = string.IsNullOrWhiteSpace(currencyCode) ? existingCurrency.Code : currencyCode;
 
-        if (string.IsNullOrWhiteSpace(currencyCode))
-        {
-            Console.WriteLine("Error: Currency code is required. Press any key to return...");
-            Console.ReadKey();
-            return;
-        }
-
-        Console.Write("Enter New Currency Name: ");
+        Console.Write($"Enter New Currency Name (Current: {existingCurrency.Name}): ");
         var currencyName = Console.ReadLine()?.Trim();
-
-        if (string.IsNullOrWhiteSpace(currencyName))
-        {
-            Console.WriteLine("Error: Currency name is required. Press any key to return...");
-            Console.ReadKey();
-            return;
-        }
+        currencyName = string.IsNullOrWhiteSpace(currencyName) ? existingCurrency.Name : currencyName;
 
         var form = new CurrencyRegistrationForm
         {
@@ -147,44 +160,52 @@ public class CurrencyMenu(ICurrencyService currencyService)
         Console.ReadKey();
     }
 
+
     private async Task DeleteCurrencyAsync()
     {
         Console.Clear();
         Console.WriteLine("=== Delete Currency ===");
 
-        Console.Write("Enter Currency ID to delete: ");
-        if (!int.TryParse(Console.ReadLine(), out int currencyId))
+        // Display all currencies before prompting for ID
+        var currencies = await _currencyService.GetAllCurrenciesAsync();
+        if (!currencies.Any())
         {
-            Console.WriteLine("Invalid ID. Please enter a valid numeric ID. Press any key to return...");
+            Console.WriteLine("No currencies found.");
+            Console.WriteLine("Press any key to return...");
             Console.ReadKey();
             return;
         }
 
-        try
+        Console.WriteLine("\nAvailable Currencies:");
+        foreach (var currency in currencies)
         {
-            // Check if the currency exists
-            var currency = await _currencyService.GetCurrencyByIdAsync(currencyId);
-            if (currency == null)
-            {
-                Console.WriteLine($"Currency with ID {currencyId} not found. Press any key to return...");
-                Console.ReadKey();
-                return;
-            }
-
-            // Attempt to delete the currency
-            var success = await _currencyService.DeleteCurrencyAsync(currencyId);
-            Console.WriteLine(success
-                ? "Currency deleted successfully!"
-                : "Error deleting currency. It may be referenced by other entities.");
-
-            Console.ReadKey();
+            Console.WriteLine($"ID: {currency.Id}, Code: {currency.Code}, Name: {currency.Name}");
         }
-        catch (Exception ex)
+
+        Console.Write("\nEnter Currency ID to delete: ");
+        if (!int.TryParse(Console.ReadLine(), out int currencyId))
         {
-            // Handle unexpected exceptions
-            Console.WriteLine($"An error occurred: {ex.Message}");
+            Console.WriteLine("Invalid ID. Press any key to return...");
             Console.ReadKey();
+            return;
         }
+
+        // Check if the currency exists
+        var currencyToDelete = await _currencyService.GetCurrencyByIdAsync(currencyId);
+        if (currencyToDelete == null)
+        {
+            Console.WriteLine($"Currency with ID {currencyId} not found. Press any key to return...");
+            Console.ReadKey();
+            return;
+        }
+
+        // Attempt to delete the currency
+        var success = await _currencyService.DeleteCurrencyAsync(currencyId);
+        Console.WriteLine(success
+            ? "Currency deleted successfully!"
+            : "Error deleting currency. It may be referenced by other entities.");
+        Console.ReadKey();
     }
+
 
 }

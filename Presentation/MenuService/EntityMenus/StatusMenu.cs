@@ -51,9 +51,16 @@ public class StatusMenu(IStatusService statusService)
         Console.WriteLine("=== All Statuses ===");
 
         var statuses = await _statusService.GetAllStatusesAsync();
-        foreach (var status in statuses)
+        if (!statuses.Any())
         {
-            Console.WriteLine($"ID: {status.Id}, Name: {status.Name}"); 
+            Console.WriteLine("No statuses found.");
+        }
+        else
+        {
+            foreach (var status in statuses)
+            {
+                Console.WriteLine($"ID: {status.Id}, Name: {status.Name}");
+            }
         }
 
         Console.WriteLine("\nPress any key to return...");
@@ -77,7 +84,7 @@ public class StatusMenu(IStatusService statusService)
 
         var form = new StatusRegistrationForm
         {
-            Name = statusName 
+            Name = statusName
         };
 
         var status = await _statusService.RegisterStatusAsync(form);
@@ -90,7 +97,23 @@ public class StatusMenu(IStatusService statusService)
         Console.Clear();
         Console.WriteLine("=== Update Status ===");
 
-        Console.Write("Enter Status ID to update: ");
+        // Display all statuses before prompting for ID
+        var statuses = await _statusService.GetAllStatusesAsync();
+        if (!statuses.Any())
+        {
+            Console.WriteLine("No statuses found.");
+            Console.WriteLine("Press any key to return...");
+            Console.ReadKey();
+            return;
+        }
+
+        Console.WriteLine("\nAvailable Statuses:");
+        foreach (var status in statuses)
+        {
+            Console.WriteLine($"ID: {status.Id}, Name: {status.Name}");
+        }
+
+        Console.Write("\nEnter Status ID to update: ");
         if (!int.TryParse(Console.ReadLine(), out int statusId))
         {
             Console.WriteLine("Invalid ID. Press any key to return...");
@@ -98,19 +121,22 @@ public class StatusMenu(IStatusService statusService)
             return;
         }
 
-        Console.Write("Enter New Status Name: ");
-        var statusName = Console.ReadLine();
-
-        if (string.IsNullOrWhiteSpace(statusName))
+        // Fetch the existing status for preview
+        var existingStatus = await _statusService.GetStatusByIdAsync(statusId);
+        if (existingStatus == null)
         {
-            Console.WriteLine("Error: Status name is required. Press any key to return...");
+            Console.WriteLine($"Status with ID {statusId} not found. Press any key to return...");
             Console.ReadKey();
             return;
         }
 
+        Console.Write($"Enter New Status Name (Current: {existingStatus.Name}): ");
+        var statusName = Console.ReadLine();
+        statusName = string.IsNullOrWhiteSpace(statusName) ? existingStatus.Name : statusName;
+
         var form = new StatusRegistrationForm
         {
-            Name = statusName 
+            Name = statusName
         };
 
         var updatedStatus = await _statusService.UpdateStatusAsync(statusId, form);
@@ -123,7 +149,23 @@ public class StatusMenu(IStatusService statusService)
         Console.Clear();
         Console.WriteLine("=== Delete Status ===");
 
-        Console.Write("Enter Status ID to delete: ");
+        // Display all statuses before prompting for ID
+        var statuses = await _statusService.GetAllStatusesAsync();
+        if (!statuses.Any())
+        {
+            Console.WriteLine("No statuses found.");
+            Console.WriteLine("Press any key to return...");
+            Console.ReadKey();
+            return;
+        }
+
+        Console.WriteLine("\nAvailable Statuses:");
+        foreach (var status in statuses)
+        {
+            Console.WriteLine($"ID: {status.Id}, Name: {status.Name}");
+        }
+
+        Console.Write("\nEnter Status ID to delete: ");
         if (!int.TryParse(Console.ReadLine(), out int statusId))
         {
             Console.WriteLine("Invalid ID. Press any key to return...");
