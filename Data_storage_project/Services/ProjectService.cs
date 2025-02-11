@@ -1,16 +1,18 @@
-﻿using Data_storage_project_library.Dtos;
+﻿using Data_storage_project_library.Contexts;
+using Data_storage_project_library.Dtos;
 using Data_storage_project_library.Entities;
 using Data_storage_project_library.Factories;
 using Data_storage_project_library.Interfaces;
 using Data_storage_project_library.Repositories;
-using System.Linq.Expressions;
+
 
 namespace Data_storage_project_library.Services;
 
-public class ProjectService(ProjectRepository repository, StatusService statusService) : IProjectService
+public class ProjectService(ProjectRepository repository, StatusService statusService, ApplicationDbContext context) : IProjectService
 {
     private readonly ProjectRepository _projectRepository = repository;
     private readonly StatusService _statusService = statusService;
+    private readonly ApplicationDbContext _context = context;
 
 
     public async Task<ProjectEntity?> RegisterProjectAsync(ProjectRegistrationForm form)
@@ -18,11 +20,27 @@ public class ProjectService(ProjectRepository repository, StatusService statusSe
         if (form == null)
             throw new ArgumentNullException(nameof(form), "Project registration form cannot be null.");
 
-        var nextId = await GenerateProjectIdAsync();
+        using (var transaction = await _context.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                var nextId = await GenerateProjectIdAsync();
 
-        var project = ProjectRegistrationFactory.CreateProject(form, nextId);
+                var project = ProjectRegistrationFactory.CreateProject(form, nextId);
+                var createdProject = await _projectRepository.CreateAsync(project);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return createdProject;
 
-        return await _projectRepository.CreateAsync(project);
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        
     }
 
     public async Task<ProjectEntity?> GetProjectByIdAsync(string projectId)
@@ -49,41 +67,75 @@ public class ProjectService(ProjectRepository repository, StatusService statusSe
 
     public async Task<bool> DeleteProjectAsync(string projectId)
     {
-        if (string.IsNullOrWhiteSpace(projectId) || !projectId.StartsWith("P-"))
-            throw new ArgumentException("Invalid project ID format. Expected format: 'P-123'.", nameof(projectId));
+        using (var transaction =await _context.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(projectId) || !projectId.StartsWith("P-"))
+                    throw new ArgumentException("Invalid project ID format. Expected format: 'P-123'.", nameof(projectId));
 
-        var project = await _projectRepository.GetAsync(p => p.Id == projectId);
-        return project == null
-            ? throw new KeyNotFoundException($"Project with ID {projectId} not found.")
-            : await _projectRepository.DeleteAsync(p => p.Id == projectId);
+                var project = await _projectRepository.GetAsync(p => p.Id == projectId);
+                if (project == null)
+                    throw new KeyNotFoundException($"Project with ID {projectId} not found.");
+                bool isDeleted = await _projectRepository.DeleteAsync(p => p.Id == projectId);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return isDeleted;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
     }
 
 
     public async Task<ProjectEntity?> UpdateProjectAsync(string projectId, ProjectRegistrationForm form)
     {
-        var existingProject = await _projectRepository.GetAsync(p => p.Id == projectId)
-            ?? throw new KeyNotFoundException($"Project with ID {projectId} not found.");
-
-        // Retrieve status information
-        var status = await _statusService.GetStatusByIdAsync(form.StatusId) ?? throw new KeyNotFoundException($"Status with ID {form.StatusId} not found.");
-
-        // Preserve existing EndDate if the project was already completed
-        if (status.Name == "Completed" && existingProject.EndDate == null)
+        using (var transaction = await _context.Database.BeginTransactionAsync())
         {
-            existingProject.EndDate = DateTime.UtcNow; // Set EndDate automatically
+            try
+            {
+                var existingProject = await _projectRepository.GetAsync(p => p.Id == projectId)
+                ?? throw new KeyNotFoundException($"Project with ID {projectId} not found.");
+
+                var status = await _statusService.GetStatusByIdAsync(form.StatusId)
+                    ?? throw new KeyNotFoundException($"Status with ID {form.StatusId} not found.");
+
+                if (status.Name == "Completed" && existingProject.EndDate == null)
+                {
+                    existingProject.EndDate = DateTime.UtcNow;
+                }
+                existingProject.Title = form.Title;
+                existingProject.Description = form.Description;
+                existingProject.StartDate = form.StartDate;
+                existingProject.CustomerId = form.CustomerId;
+                existingProject.StatusId = form.StatusId;
+                existingProject.EmployeeId = form.EmployeeId;
+                existingProject.ServiceId = form.ServiceId;
+
+                var updatedProject = await _projectRepository.UpdateAsync(existingProject, p => p.Id == projectId);
+
+                await transaction.CommitAsync();
+                return updatedProject;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
-
-        existingProject.Title = form.Title;
-        existingProject.Description = form.Description;
-        existingProject.StartDate = form.StartDate;
-        existingProject.CustomerId = form.CustomerId;
-        existingProject.StatusId = form.StatusId;
-        existingProject.EmployeeId = form.EmployeeId;
-        existingProject.ServiceId = form.ServiceId;
-
-        return await _projectRepository.UpdateAsync(existingProject, p => p.Id == projectId);
     }
 
+
+
+ 
+     //I used chatGPT 4o for this method. It is responsible for generating a unique project ID in the format "P-XXX".
+     //The method retrieves the last stored project from the database and extracts the numerical part of its ID.
+     //If no projects exist, the first project ID will be "P-1".
+     //If parsing fails, an exception is thrown to prevent incorrect ID generation.
 
 
     private async Task<string> GenerateProjectIdAsync()
@@ -93,9 +145,11 @@ public class ProjectService(ProjectRepository repository, StatusService statusSe
         int lastNumber = 0;
         if (lastProject?.Id != null && lastProject.Id.StartsWith("P-"))
         {
-            int.TryParse(lastProject.Id.AsSpan(2), out lastNumber);
+            if (!int.TryParse(lastProject.Id.AsSpan(2), out lastNumber))
+            {
+                throw new InvalidOperationException("Failed to parse last project ID.");
+            }  
         }
-
         return $"P-{lastNumber + 1}";
     }
 

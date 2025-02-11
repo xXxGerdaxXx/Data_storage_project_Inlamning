@@ -10,35 +10,51 @@ namespace Data_storage_project_library.Services;
 public class CustomerService(CustomerRepository customerRepository, ApplicationDbContext context) : ICustomerService
 {
     private readonly CustomerRepository _customerRepository = customerRepository;
-    private readonly ApplicationDbContext _context = context; 
+    private readonly ApplicationDbContext _context = context;
 
     public async Task<CustomerEntity?> RegisterCustomerAsync(CustomerRegistrationForm form)
     {
         if (form == null)
             throw new ArgumentNullException(nameof(form), "Customer form cannot be null.");
 
-        var newCustomer = new CustomerEntity
+        using (var transaction = await _context.Database.BeginTransactionAsync())
         {
-            CustomerName = form.CustomerName,
-            CustomerContacts =
-            [
-                new()
-                {
-                    FirstName = form.FirstName,
-                    LastName = form.LastName,
-                    Email = form.Email,
-                    Phone = form.PhoneNumber
-                }
-            ]
-        };
+            try
+            {
+                var newCustomer = new CustomerEntity
 
-        return await _customerRepository.CreateAsync(newCustomer);
+                {
+                    CustomerName = form.CustomerName,
+                    CustomerContacts =
+                    [
+                        new()
+                        {
+                            FirstName = form.FirstName,
+                            LastName = form.LastName,
+                            Email = form.Email,
+                            Phone = form.PhoneNumber
+                        }
+                    ]
+                };
+
+                var createdCustomer = await _customerRepository.CreateAsync(newCustomer);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return createdCustomer;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }  
     }
 
     public async Task<CustomerEntity?> GetCustomerByIdAsync(int customerId)
     {
         return await _context.Customers
-            .Include(c => c.CustomerContacts) 
+            .Include(c => c.CustomerContacts)
             .FirstOrDefaultAsync(c => c.Id == customerId);
     }
 
@@ -49,36 +65,76 @@ public class CustomerService(CustomerRepository customerRepository, ApplicationD
 
     public async Task<bool> DeleteCustomerAsync(int customerId)
     {
-        return await _customerRepository.DeleteAsync(c => c.Id == customerId);
+        using (var transaction = await _context.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                var customer = await _context.Customers
+                    .Include (c => c.CustomerContacts) // eager loading (loads customer and contacts together) used chatGPT for this.
+                    .FirstOrDefaultAsync(c => c.Id == customerId);
+
+                
+                if (customer == null)
+                    throw new KeyNotFoundException($"Customer with ID {customerId} not found.");
+
+                _context.Customers.Remove(customer);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+
     }
 
     public async Task<CustomerEntity?> UpdateCustomerAsync(int customerId, CustomerRegistrationForm form)
     {
-        
-        var existingCustomer = await _context.Customers
-            .Include(c => c.CustomerContacts) 
-            .FirstOrDefaultAsync(c => c.Id == customerId) ?? throw new KeyNotFoundException($"Customer with ID {customerId} not found.");
-        existingCustomer.CustomerName = form.CustomerName;
-
-        var existingContact = existingCustomer.CustomerContacts.FirstOrDefault();
-        if (existingContact != null)
+        using (var transaction = await _context.Database.BeginTransactionAsync())
         {
-            existingContact.FirstName = form.FirstName;
-            existingContact.LastName = form.LastName;
-            existingContact.Email = form.Email;
-            existingContact.Phone = form.PhoneNumber;
-        }
-        else
-        {
-            existingCustomer.CustomerContacts.Add(new CustomerContactEntity
+            try
             {
-                FirstName = form.FirstName,
-                LastName = form.LastName,
-                Email = form.Email,
-                Phone = form.PhoneNumber
-            });
-        }
+                var existingCustomer = await _context.Customers
+                   .Include(c => c.CustomerContacts)
+                   .FirstOrDefaultAsync(c => c.Id == customerId)
+                   ?? throw new KeyNotFoundException($"Customer with ID {customerId} not found.");
 
-        return await _customerRepository.UpdateAsync(existingCustomer, c => c.Id == customerId);
+                existingCustomer.CustomerName = form.CustomerName;
+
+                var existingContact = existingCustomer.CustomerContacts.FirstOrDefault();
+                if (existingContact != null)
+                {
+                    existingContact.FirstName = form.FirstName;
+                    existingContact.LastName = form.LastName;
+                    existingContact.Email = form.Email;
+                    existingContact.Phone = form.PhoneNumber;
+                }
+                else
+                {
+                    existingCustomer.CustomerContacts.Add(new CustomerContactEntity
+                    {
+                        FirstName = form.FirstName,
+                        LastName = form.LastName,
+                        Email = form.Email,
+                        Phone = form.PhoneNumber
+                    });
+                }
+                var updatedCustomer = await _customerRepository.UpdateAsync(existingCustomer, c => c.Id == customerId);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return updatedCustomer;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
     }
 }

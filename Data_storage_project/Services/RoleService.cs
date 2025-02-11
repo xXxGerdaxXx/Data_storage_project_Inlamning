@@ -1,29 +1,44 @@
-﻿using Data_storage_project_library.Dtos;
+﻿using Data_storage_project_library.Contexts;
+using Data_storage_project_library.Dtos;
 using Data_storage_project_library.Entities;
 using Data_storage_project_library.Factories;
 using Data_storage_project_library.Interfaces;
+using Data_storage_project_library.Repositories; 
 
 namespace Data_storage_project_library.Services;
 
-public class RoleService(IBaseRepository<RoleEntity> roleRepository) : IRoleService
+public class RoleService(RoleRepository roleRepository, ApplicationDbContext context) : IRoleService
 {
-    private readonly IBaseRepository<RoleEntity> _roleRepository = roleRepository ?? throw new ArgumentNullException(nameof(roleRepository));
+    private readonly RoleRepository _roleRepository = roleRepository;
+    private readonly ApplicationDbContext _context = context;
 
     public async Task<RoleEntity?> RegisterRoleAsync(RoleRegistrationForm form)
     {
         if (form == null)
             throw new ArgumentNullException(nameof(form), "Role form cannot be null.");
 
-        // Check if the role already exists
-        var existingRole = await _roleRepository.GetAsync(r => r.RoleName == form.RoleName);
-        if (existingRole != null)
-            throw new ArgumentException("Role name already exists.");
+        using (var transaction = await _context.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                var existingRole = await _roleRepository.GetAsync(r => r.RoleName == form.RoleName);
+                if (existingRole != null)
+                    throw new ArgumentException("Role name already exists.");
 
-        // Create RoleEntity using the factory
-        var role = RoleRegistrationFactory.CreateRole(form);
+                var role = RoleRegistrationFactory.CreateRole(form);
+                _context.Roles.Add(role);
+                await _context.SaveChangesAsync();
 
-        // Save to the database
-        return await _roleRepository.CreateAsync(role);
+                await transaction.CommitAsync();
+                return role;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+
+        }
     }
 
     public async Task<IEnumerable<RoleEntity>> GetAllRolesAsync()
@@ -38,17 +53,49 @@ public class RoleService(IBaseRepository<RoleEntity> roleRepository) : IRoleServ
 
     public async Task<RoleEntity?> UpdateRoleAsync(int roleId, RoleRegistrationForm form)
     {
-        var existingRole = await _roleRepository.GetAsync(r => r.Id == roleId);
-        if (existingRole == null)
-            return null;
+        using (var transaction = await _context.Database.BeginTransactionAsync()) // ✅ Added transaction
+        {
+            try
+            {
+                var existingRole = await _roleRepository.GetAsync(r => r.Id == roleId);
+                if (existingRole == null)
+                    return null;
 
-        existingRole.RoleName = form.RoleName;
+                existingRole.RoleName = form.RoleName;
 
-        return await _roleRepository.UpdateAsync(existingRole, r => r.Id == roleId);
+                await _context.SaveChangesAsync(); 
+                await transaction.CommitAsync();
+                return existingRole;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync(); 
+                throw;
+            }
+        }
     }
 
     public async Task<bool> DeleteRoleAsync(int roleId)
     {
-        return await _roleRepository.DeleteAsync(r => r.Id == roleId);
+        using (var transaction = await _context.Database.BeginTransactionAsync()) 
+        {
+            try
+            {
+                var role = await _roleRepository.GetAsync(r => r.Id == roleId);
+                if (role == null)
+                    throw new KeyNotFoundException($"Role with ID {roleId} not found.");
+
+                _context.Roles.Remove(role); 
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync(); 
+                throw;
+            }
+        }
     }
 }

@@ -10,5 +10,4 @@ public interface IEmployeeService
     Task<EmployeeEntity?> GetEmployeeByIdAsync(int employeeId);
     Task<EmployeeEntity?> UpdateEmployeeAsync(EmployeeRegistrationForm form, int employeeId);
     Task<bool> DeleteEmployeeAsync(int employeeId);
-    Task<IEnumerable<RoleEntity>> GetAllRolesAsync();
 }

@@ -4,9 +4,10 @@ using Data_storage_project_library.Entities;
 
 namespace Presentation.MenuService.EntityMenus;
 
-public class EmployeeMenu(IEmployeeService employeeService)
+public class EmployeeMenu(IEmployeeService employeeService, IRoleService roleService)
 {
     private readonly IEmployeeService _employeeService = employeeService;
+    private readonly IRoleService _roleService = roleService;
 
     public async Task RunAsync()
     {
@@ -105,7 +106,7 @@ public class EmployeeMenu(IEmployeeService employeeService)
 
         // Display available roles
         Console.WriteLine("\n=== Available Roles ===");
-        var roles = await _employeeService.GetAllRolesAsync();
+        var roles = await _roleService.GetAllRolesAsync();
         foreach (var role in roles)
         {
             Console.WriteLine($"ID: {role.Id}, Name: {role.RoleName}");
@@ -180,7 +181,7 @@ public class EmployeeMenu(IEmployeeService employeeService)
         email = string.IsNullOrWhiteSpace(email) ? existingEmployee.Email : email;
 
         Console.WriteLine("\n=== Available Roles ===");
-        var roles = await _employeeService.GetAllRolesAsync();
+        var roles = await _roleService.GetAllRolesAsync();
         foreach (var role in roles)
         {
             Console.WriteLine($"ID: {role.Id}, Name: {role.RoleName}");
