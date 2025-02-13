@@ -108,7 +108,6 @@ public class CurrencyMenu(ICurrencyService currencyService)
         Console.Clear();
         Console.WriteLine("=== Update Currency ===");
 
-        // Display all currencies before prompting for ID
         var currencies = await _currencyService.GetAllCurrenciesAsync();
         if (!currencies.Any())
         {
@@ -166,7 +165,6 @@ public class CurrencyMenu(ICurrencyService currencyService)
         Console.Clear();
         Console.WriteLine("=== Delete Currency ===");
 
-        // Display all currencies before prompting for ID
         var currencies = await _currencyService.GetAllCurrenciesAsync();
         if (!currencies.Any())
         {

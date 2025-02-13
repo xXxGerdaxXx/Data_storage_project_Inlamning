@@ -47,25 +47,87 @@ public class CustomerMenu(ICustomerService customerService)
 
     private async Task ViewAllCustomersAsync()
     {
-        Console.Clear();
-        Console.WriteLine("=== All Customers ===");
-
-        var customers = await _customerService.GetAllCustomersAsync();
-        if (customers == null || !customers.Any()) 
+        while (true) 
         {
-            Console.WriteLine("No customers found.");
+            Console.Clear();
+            Console.WriteLine("=== All Customers ===");
+
+            var customers = await _customerService.GetAllCustomersAsync();
+            if (customers == null || !customers.Any())
+            {
+                Console.WriteLine("No customers found.");
+            }
+            else
+            {
+                foreach (var customer in customers)
+                {
+                    Console.WriteLine($"ID: {customer.Id}, Name: {customer.CustomerName}");
+                }
+            }
+
+            Console.WriteLine("\nOptions:");
+            Console.WriteLine("1. View Customer Contact Details");
+            Console.WriteLine("2. Back to Main Menu");
+            Console.Write("\nEnter your choice: ");
+
+            var choice = Console.ReadLine();
+            switch (choice)
+            {
+                case "1":
+                    await ViewCustomerContactAsync();
+                    break;
+                case "2":
+                    return; 
+                default:
+                    Console.WriteLine("Invalid choice. Press any key to try again...");
+                    Console.ReadKey();
+                    break;
+            }
+        }
+    }
+    private async Task ViewCustomerContactAsync()
+    {
+        Console.Write("\nEnter the Customer ID to view contact details: ");
+
+        if (!int.TryParse(Console.ReadLine(), out int customerId))
+        {
+            Console.WriteLine("Invalid ID. Press any key to return...");
+            Console.ReadKey();
+            return;
+        }
+
+        var customer = await _customerService.GetCustomerByIdAsync(customerId);
+
+        if (customer == null)
+        {
+            Console.WriteLine("Customer not found. Press any key to return...");
+            Console.ReadKey();
+            return;
+        }
+
+       
+        Console.Clear();
+        Console.WriteLine($"=== Contact Details for {customer.CustomerName} ===");
+
+        if (customer.CustomerContacts == null || customer.CustomerContacts.Count == 0)
+        {
+            Console.WriteLine("No contact details found for this customer.");
         }
         else
         {
-            foreach (var customer in customers)
+            foreach (var contact in customer.CustomerContacts)
             {
-                Console.WriteLine($"ID: {customer?.Id}, Name: {customer?.CustomerName ?? "Unknown"}");
+                Console.WriteLine($"First Name: {contact.FirstName}");
+                Console.WriteLine($"Last Name: {contact.LastName}");
+                Console.WriteLine($"Email: {contact.Email}");
+                Console.WriteLine($"Phone: {contact.Phone}\n");
             }
         }
 
-        Console.WriteLine("\nPress any key to return...");
+        Console.WriteLine("Press any key to return to the customer list...");
         Console.ReadKey();
     }
+
 
     private async Task AddNewCustomerAsync()
     {
@@ -81,8 +143,7 @@ public class CustomerMenu(ICustomerService customerService)
             Console.ReadKey();
             return;
         }
-
-        // Collect Customer Contact Information
+        
         Console.Write("Enter First Name: ");
         var firstName = Console.ReadLine()?.Trim();
 
@@ -95,7 +156,6 @@ public class CustomerMenu(ICustomerService customerService)
         Console.Write("Enter Phone Number: ");
         var phoneNumber = Console.ReadLine()?.Trim() ?? string.Empty;
 
-        // Validate required fields
         if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName))
         {
             Console.WriteLine("Error: First name and last name are required. Press any key to return...");
@@ -129,7 +189,6 @@ public class CustomerMenu(ICustomerService customerService)
         Console.Clear();
         Console.WriteLine("=== Update Customer ===");
 
-        // Display all customers
         var customers = await _customerService.GetAllCustomersAsync();
         if (customers == null || !customers.Any())
         {
@@ -161,7 +220,6 @@ public class CustomerMenu(ICustomerService customerService)
             return;
         }
 
-        // Edit customer details
         Console.Write($"Enter New Customer Name (Current: {existingCustomer.CustomerName}): ");
         var customerName = Console.ReadLine()?.Trim();
         customerName = string.IsNullOrWhiteSpace(customerName) ? existingCustomer.CustomerName : customerName;
@@ -205,7 +263,6 @@ public class CustomerMenu(ICustomerService customerService)
         Console.Clear();
         Console.WriteLine("=== Delete Customer ===");
 
-        // Display all customers
         var customers = await _customerService.GetAllCustomersAsync();
         if (customers == null || !customers.Any())
         {

@@ -1,6 +1,19 @@
 ﻿using Data_storage_project_library.Dtos;
 using Data_storage_project_library.Interfaces;
 
+
+/// <summary>
+/// Jag använde chatGPT4o för att strukturera visningen åt mig för att visa tillgängliga alternativ 
+/// innan jag valde så att användaren inte behöver känna till alla id- och projektnummer
+/// 
+/// Jag använde också AI för att hjälpa mig att korrekt koppla status ''compelted'' med slutdatum för projektet. 
+/// När Project sparas och har någon annan status har projektet inget slutdatum. 
+/// Men om status väljs som ''completed'' under registrering eller vid uppdatering av projektet, 
+/// tilldelas det slutdatum för aktuell dag.
+/// </summary>
+
+
+
 namespace Presentation.MenuService.EntityMenus;
 
 public class ProjectMenu(
@@ -201,7 +214,7 @@ public class ProjectMenu(
         {
             Console.WriteLine($"ID: {project.Id}, Title: {project.Title}");
         }
-        // Step 1: Prompt user to enter the numeric project ID
+        
         Console.Write("Enter Project ID (numeric only): ");
         if (!int.TryParse(Console.ReadLine(), out int projectId))
         {
@@ -210,10 +223,10 @@ public class ProjectMenu(
             return;
         }
 
-        // Convert numeric ID to "P-123" format
+        // Converts numeric ID to "P-123" format
         var projectIdString = $"P-{projectId}";
 
-        // Retrieve the existing project
+        // Retrieves the existing project
         var existingProject = await _projectService.GetProjectByIdAsync(projectIdString);
         if (existingProject == null)
         {
@@ -222,7 +235,7 @@ public class ProjectMenu(
             return;
         }
 
-        // Step 2: Pre-fill data and allow user to modify fields
+        // Pre-fills data and allow user to modify fields
         Console.Write($"Enter New Project Title (Current: {existingProject.Title}): ");
         var title = Console.ReadLine()?.Trim();
         title = string.IsNullOrWhiteSpace(title) ? existingProject.Title : title;
@@ -237,7 +250,6 @@ public class ProjectMenu(
             startDate = existingProject.StartDate;
         }
 
-        // Step 3: Show and select related entities
         Console.WriteLine("\n=== Available Customers ===");
         var customers = await _customerService.GetAllCustomersAsync();
         foreach (var customer in customers)
@@ -286,7 +298,7 @@ public class ProjectMenu(
             serviceId = existingProject.ServiceId;
         }
 
-        // Step 4: Handle EndDate based on status
+        // Handles EndDate based on status
         DateTime? endDate = existingProject.EndDate; // Preserve existing EndDate if already set
 
         var selectedStatus = statuses.FirstOrDefault(s => s.Id == statusId);
@@ -295,7 +307,7 @@ public class ProjectMenu(
             endDate = DateTime.UtcNow; // Set EndDate only if it was previously null
         }
 
-        // Step 5: Create the update form
+        
         var form = new ProjectRegistrationForm
         {
             Title = title,
@@ -305,10 +317,9 @@ public class ProjectMenu(
             StatusId = statusId,
             EmployeeId = employeeId,
             ServiceId = serviceId,
-            EndDate = endDate // Include EndDate in the update form
+            EndDate = endDate 
         };
 
-        // Step 6: Update the project
         var updatedProject = await _projectService.UpdateProjectAsync(projectIdString, form);
         Console.WriteLine(updatedProject != null ? "Project updated successfully!" : "Error updating project.");
         Console.ReadKey();
@@ -331,7 +342,6 @@ public class ProjectMenu(
             return;
         }
 
-        // Convert integer to string format "P-123"
         var projectIdString = $"P-{projectId}";
 
         var success = await _projectService.DeleteProjectAsync(projectIdString);
