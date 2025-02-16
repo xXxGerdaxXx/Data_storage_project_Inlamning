@@ -35,17 +35,36 @@ public class BaseRepository<T> : IBaseRepository<T> where T : class
         }
     }
 
+    /// <summary>
+    /// I used ChatGTP 4o to help me with eager loading and these two methods bellow.
+
+    /// I use eager loading here to avoid multiple queries when fetching related data like 
+    /// an employee’s role, a project’s status, or a service’s currency. This loads everything 
+    /// in one go instead of making separate database calls.
+
+    /// For example:
+    /// - In EmployeeRepository, I include the employee's role.
+    /// - In ServiceRepository, I include the service’s currency.
+    /// - In ProjectRepository, I could include the project’s status or assigned employee.
+    /// </summary>
+
     public async Task<IEnumerable<T>> GetAllAsync(params Expression<Func<T, object>>[] includeProperties)
     {
         IQueryable<T> query = _dbSet;
 
         foreach (var includeProperty in includeProperties)
         {
-            query = query.Include(includeProperty); // Eagerly load specified properties
+            query = query.Include(includeProperty); 
         }
 
         return await query.ToListAsync();
     }
+
+/// <summary>
+/// Fetches a single record that matches the condition, with the option to include related data.
+/// This allows me to fetch things like an employee with their role or a service with its currency 
+/// in a single query instead of making multiple database calls. 
+/// </summary>
 
     public async Task<T?> GetAsync(Expression<Func<T, bool>> expression, params Expression<Func<T, object>>[] includeProperties)
     {
@@ -53,13 +72,11 @@ public class BaseRepository<T> : IBaseRepository<T> where T : class
 
         foreach (var includeProperty in includeProperties)
         {
-            query = query.Include(includeProperty); // Eagerly load specified properties
+            query = query.Include(includeProperty); 
         }
 
         return await query.FirstOrDefaultAsync(expression);
     }
-
-
 
     public async Task<T?> UpdateAsync(T entity, Expression<Func<T, bool>> identifierExpression)
     {
