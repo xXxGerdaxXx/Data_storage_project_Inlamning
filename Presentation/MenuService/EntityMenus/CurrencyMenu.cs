@@ -131,7 +131,6 @@ public class CurrencyMenu(ICurrencyService currencyService)
             return;
         }
 
-        // Fetch existing currency for preview
         var existingCurrency = await _currencyService.GetCurrencyByIdAsync(currencyId);
         if (existingCurrency == null)
         {
@@ -147,6 +146,16 @@ public class CurrencyMenu(ICurrencyService currencyService)
         Console.Write($"Enter New Currency Name (Current: {existingCurrency.Name}): ");
         var currencyName = Console.ReadLine()?.Trim();
         currencyName = string.IsNullOrWhiteSpace(currencyName) ? existingCurrency.Name : currencyName;
+
+        Console.Write("\nDo you want to save these changes? (Y/N): ");
+        var confirmation = Console.ReadLine()?.Trim().ToUpper();
+
+        if (confirmation != "Y")
+        {
+            Console.WriteLine("Changes discarded. Returning to menu...");
+            Console.ReadKey();
+            return;
+        }
 
         var form = new CurrencyRegistrationForm
         {

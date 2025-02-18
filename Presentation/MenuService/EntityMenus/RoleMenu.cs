@@ -131,6 +131,16 @@ public class RoleMenu(IRoleService roleService)
             return;
         }
 
+        Console.Write("\nDo you want to save these changes? (Y/N): ");
+        var confirmation = Console.ReadLine()?.Trim().ToUpper();
+
+        if (confirmation != "Y")
+        {
+            Console.WriteLine("Changes discarded. Returning to menu...");
+            Console.ReadKey();
+            return;
+        }
+
         var form = new RoleRegistrationForm
         {
             RoleName = roleName

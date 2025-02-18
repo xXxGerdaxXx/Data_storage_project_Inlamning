@@ -17,38 +17,36 @@ public class CustomerService(CustomerRepository customerRepository, ApplicationD
         if (form == null)
             throw new ArgumentNullException(nameof(form), "Customer form cannot be null.");
 
-        using (var transaction = await _context.Database.BeginTransactionAsync())
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
         {
-            try
-            {
-                var newCustomer = new CustomerEntity
+            var newCustomer = new CustomerEntity
 
-                {
-                    CustomerName = form.CustomerName,
-                    CustomerContacts =
-                    [
-                        new()
+            {
+                CustomerName = form.CustomerName,
+                CustomerContacts =
+                [
+                    new()
                         {
                             FirstName = form.FirstName,
                             LastName = form.LastName,
                             Email = form.Email,
                             Phone = form.PhoneNumber
                         }
-                    ]
-                };
+                ]
+            };
 
-                var createdCustomer = await _customerRepository.CreateAsync(newCustomer);
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+            var createdCustomer = await _customerRepository.CreateAsync(newCustomer);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
-                return createdCustomer;
-            }
-            catch (Exception)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-        }  
+            return createdCustomer;
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task<CustomerEntity?> GetCustomerByIdAsync(int customerId)
@@ -75,7 +73,9 @@ public class CustomerService(CustomerRepository customerRepository, ApplicationD
 
                 
                 if (customer == null)
+                {
                     throw new KeyNotFoundException($"Customer with ID {customerId} not found.");
+                }
 
                 _context.Customers.Remove(customer);
 
@@ -95,46 +95,44 @@ public class CustomerService(CustomerRepository customerRepository, ApplicationD
 
     public async Task<CustomerEntity?> UpdateCustomerAsync(int customerId, CustomerRegistrationForm form)
     {
-        using (var transaction = await _context.Database.BeginTransactionAsync())
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
         {
-            try
+            var existingCustomer = await _context.Customers
+               .Include(c => c.CustomerContacts)
+               .FirstOrDefaultAsync(c => c.Id == customerId)
+               ?? throw new KeyNotFoundException($"Customer with ID {customerId} not found.");
+
+            existingCustomer.CustomerName = form.CustomerName;
+
+            var existingContact = existingCustomer.CustomerContacts.FirstOrDefault();
+            if (existingContact != null)
             {
-                var existingCustomer = await _context.Customers
-                   .Include(c => c.CustomerContacts)
-                   .FirstOrDefaultAsync(c => c.Id == customerId)
-                   ?? throw new KeyNotFoundException($"Customer with ID {customerId} not found.");
-
-                existingCustomer.CustomerName = form.CustomerName;
-
-                var existingContact = existingCustomer.CustomerContacts.FirstOrDefault();
-                if (existingContact != null)
-                {
-                    existingContact.FirstName = form.FirstName;
-                    existingContact.LastName = form.LastName;
-                    existingContact.Email = form.Email;
-                    existingContact.Phone = form.PhoneNumber;
-                }
-                else
-                {
-                    existingCustomer.CustomerContacts.Add(new CustomerContactEntity
-                    {
-                        FirstName = form.FirstName,
-                        LastName = form.LastName,
-                        Email = form.Email,
-                        Phone = form.PhoneNumber
-                    });
-                }
-                var updatedCustomer = await _customerRepository.UpdateAsync(existingCustomer, c => c.Id == customerId);
-
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return updatedCustomer;
+                existingContact.FirstName = form.FirstName;
+                existingContact.LastName = form.LastName;
+                existingContact.Email = form.Email;
+                existingContact.Phone = form.PhoneNumber;
             }
-            catch (Exception)
+            else
             {
-                await transaction.RollbackAsync();
-                throw;
+                existingCustomer.CustomerContacts.Add(new CustomerContactEntity
+                {
+                    FirstName = form.FirstName,
+                    LastName = form.LastName,
+                    Email = form.Email,
+                    Phone = form.PhoneNumber
+                });
             }
+            var updatedCustomer = await _customerRepository.UpdateAsync(existingCustomer, c => c.Id == customerId);
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return updatedCustomer;
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            throw;
         }
     }
 }

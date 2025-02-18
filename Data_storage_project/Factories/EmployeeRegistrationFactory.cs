@@ -5,7 +5,7 @@ namespace Data_storage_project_library.Factories;
 
 public static class EmployeeRegistrationFactory
 {
-    public static EmployeeEntity CreateEmployee(EmployeeRegistrationForm form)
+    public static EmployeeEntity CreateEmployee(EmployeeRegistrationForm form, RoleEntity role)
     {
         if (form == null)
             throw new ArgumentNullException(nameof(form), "Employee registration form cannot be null.");
@@ -18,7 +18,8 @@ public static class EmployeeRegistrationFactory
             FirstName = form.FirstName,
             LastName = form.LastName,
             Email = form.Email,
-            RoleId = form.RoleId
+            RoleId = form.RoleId,
+            Role = role
         };
     }
 }

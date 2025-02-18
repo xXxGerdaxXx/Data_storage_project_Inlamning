@@ -8,115 +8,114 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Data_storage_project_library.Services;
 
-public class EmployeeService(EmployeeRepository employeeRepository, ApplicationDbContext context) : IEmployeeService
+public class EmployeeService(IBaseRepository<EmployeeEntity> _employeeRepository, ApplicationDbContext _context) : IEmployeeService
 {
-    private readonly EmployeeRepository _employeeRepository = employeeRepository;
-    private readonly ApplicationDbContext _context = context;
-
-    public async Task<EmployeeEntity?> RegisterEmployeeAsync(EmployeeRegistrationForm form)
+    public async Task<EmployeeDto?> RegisterEmployeeAsync(EmployeeRegistrationForm form)
     {
         if (form == null)
             throw new ArgumentNullException(nameof(form), "Employee registration form cannot be null.");
 
-        using (var transaction = await _context.Database.BeginTransactionAsync())
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
         {
-            try
+            var existingEmployee = await _employeeRepository.GetAsync(e => e.Email == form.Email);
+            if (existingEmployee != null)
+                throw new ArgumentException("An employee with this email already exists.");
+
+            var role = await _context.Roles.FindAsync(form.RoleId);
+            if (role == null)
+                throw new KeyNotFoundException($"Role with ID {form.RoleId} not found.");
+
+            var employee = new EmployeeEntity
             {
-                var existingEmployee = await _employeeRepository.GetAsync(e => e.Email == form.Email);
-                if (existingEmployee != null)
-                    throw new ArgumentException("An employee with this email already exists.");
-                var roleExist = await _context.Roles.AnyAsync(r => r.Id == form.RoleId);
-                if (!roleExist)
-                    throw new KeyNotFoundException($"Role with ID {form.RoleId} not found.");
+                FirstName = form.FirstName,
+                LastName = form.LastName,
+                Email = form.Email,
+                RoleId = form.RoleId,
+                Role = role
+            };
 
-                var employee = EmployeeRegistrationFactory.CreateEmployee(form);
+            await _employeeRepository.CreateAsync(employee);
+            await transaction.CommitAsync();
 
-                _context.Employees.Add(employee);
-                await _context.SaveChangesAsync();
-
-                await transaction.CommitAsync();
-                return employee;
-            }
-            catch (Exception)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+            return EmployeeFactory.Create(employee); 
         }
-}
-
-    public async Task<IEnumerable<EmployeeEntity>> GetAllEmployeesAsync()
-    {
-        return await _employeeRepository.GetAllAsync(e => e.Role); // Eagerly load Role
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
-
-    public async Task<EmployeeEntity?> GetEmployeeByIdAsync(int employeeId)
+    public async Task<IEnumerable<EmployeeDto>> GetAllEmployeesAsync()
     {
-        return await _employeeRepository.GetAsync(e => e.Id == employeeId, e => e.Role); // Eagerly load Role
+        var employees = await _context.Employees
+            .Include(e => e.Role) 
+            .ToListAsync();
+
+        return employees.Select(EmployeeFactory.Create).ToList();
     }
 
+    public async Task<EmployeeDto?> GetEmployeeByIdAsync(int employeeId)
+    {
+        var employee = await _context.Employees
+            .Include(e => e.Role) 
+            .FirstOrDefaultAsync(e => e.Id == employeeId);
 
-    public async Task<EmployeeEntity?> UpdateEmployeeAsync(EmployeeRegistrationForm form, int employeeId)
+        return employee != null ? EmployeeFactory.Create(employee) : null;
+    }
+
+    public async Task<EmployeeDto?> UpdateEmployeeAsync( EmployeeRegistrationForm form, int employeeId)
     {
         if (form == null)
             throw new ArgumentNullException(nameof(form), "Employee form cannot be null.");
 
-        using (var transaction = await _context.Database.BeginTransactionAsync())
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
         {
-            try
-            {
-                var existingEmployee = await _employeeRepository.GetAsync(e => e.Id == employeeId);
-                if (existingEmployee == null)
-                    throw new KeyNotFoundException($"Employee with ID {employeeId} not found.");
+            var existingEmployee = await _employeeRepository.GetAsync(e => e.Id == employeeId);
+            if (existingEmployee == null)
+                throw new KeyNotFoundException($"Employee with ID {employeeId} not found.");
 
-                var roleExist = await _context.Roles.AnyAsync(r => r.Id == form.RoleId);
-                if (!roleExist)
-                    throw new KeyNotFoundException($"Role with ID {form.RoleId} not found.");
+            var role = await _context.Roles.FindAsync(form.RoleId);
+            if (role == null)
+                throw new KeyNotFoundException($"Role with ID {form.RoleId} not found.");
 
-                existingEmployee.FirstName = form.FirstName;
-                existingEmployee.LastName = form.LastName;
-                existingEmployee.Email = form.Email;
-                existingEmployee.RoleId = form.RoleId;
+            existingEmployee.FirstName = form.FirstName;
+            existingEmployee.LastName = form.LastName;
+            existingEmployee.Email = form.Email;
+            existingEmployee.RoleId = form.RoleId;
+            existingEmployee.Role = role;
 
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return existingEmployee;
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
-            }
-            catch (Exception)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-
-
+            return EmployeeFactory.Create(existingEmployee); // ✅ Convert to DTO
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            throw;
         }
     }
 
     public async Task<bool> DeleteEmployeeAsync(int employeeId)
     {
-        using (var transaction = await _context.Database.BeginTransactionAsync())
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
         {
-            try
-            {
-                var employee = await _employeeRepository.GetAsync(e => e.Id == employeeId);
-                if (employee == null)
-                    throw new KeyNotFoundException($"Employee with ID {employeeId} not found.");
+            var employee = await _employeeRepository.GetAsync(e => e.Id == employeeId);
+            if (employee == null)
+                return false;
 
-                _context.Employees.Remove(employee);
-                await _context.SaveChangesAsync();
-
-                await transaction.CommitAsync();
-                return true;
-            }
-            catch (Exception)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+            await _employeeRepository.DeleteAsync(e => e.Id == employeeId);
+            await transaction.CommitAsync();
+            return true;
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            throw;
         }
     }
-
-
 }

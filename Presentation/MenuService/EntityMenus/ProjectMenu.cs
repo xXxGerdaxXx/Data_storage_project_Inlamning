@@ -73,27 +73,31 @@ public class ProjectMenu(
         Console.WriteLine("=== All Projects ===");
 
         var projects = await _projectService.GetAllProjectsAsync();
-        if (projects == null || !projects.Any()) 
+
+        if (projects == null || !projects.Any())
         {
             Console.WriteLine("No projects found.");
         }
         else
         {
+            Console.WriteLine($"{"ID",-6} {"Title",-20} {"Start Date",-12} {"End Date",-12} {"Customer",-20} {"Status",-15} {"Employee",-20} {"Service",-20}");
+            Console.WriteLine(new string('-', 120)); 
+
             foreach (var project in projects)
             {
-                string statusCompleted = project?.Status?.IsCompleted == true ? "Completed" : "Not Completed";
                 string endDate = project?.EndDate?.ToShortDateString() ?? "Not Set";
 
-                Console.WriteLine($"ID: {project?.Id}, Title: {project?.Title}, Start Date: {project?.StartDate.ToShortDateString()}, End Date: {endDate}, Status: {statusCompleted}, Service Id: {project?.ServiceId}");
+                Console.WriteLine($"{project?.Id,-6} {project?.Title,-20} {project?.StartDate.ToShortDateString(),-12} {endDate,-12} " +
+                                  $"{project?.CustomerName,-20} {project?.StatusName,-15} {project?.EmployeeFullName,-20} {project?.ServiceName,-20}");
             }
-
-
-
         }
 
         Console.WriteLine("\nPress any key to return...");
         Console.ReadKey();
     }
+
+
+
 
     private async Task AddNewProjectAsync()
     {
@@ -121,7 +125,6 @@ public class ProjectMenu(
             return;
         }
 
-        // Show available customers before selecting
         Console.WriteLine("\n=== Available Customers ===");
         var customers = await _customerService.GetAllCustomersAsync();
         foreach (var customer in customers)
@@ -136,7 +139,6 @@ public class ProjectMenu(
             return;
         }
 
-        // Show available statuses before selecting
         Console.WriteLine("\n=== Project Statuses ===");
         var statuses = await _statusService.GetAllStatusesAsync();
         foreach (var status in statuses)
@@ -151,7 +153,6 @@ public class ProjectMenu(
             return;
         }
 
-        // Show available employees before selecting
         Console.WriteLine("\n=== Available Employees ===");
         var employees = await _employeeService.GetAllEmployeesAsync();
         foreach (var employee in employees)
@@ -166,12 +167,11 @@ public class ProjectMenu(
             return;
         }
 
-        // Show available services with currency before selecting
         Console.WriteLine("\n=== Available Services ===");
         var services = await _serviceService.GetAllServicesAsync();
         foreach (var service in services)
         {
-            Console.WriteLine($"ID: {service.Id}, Name: {service.ServiceName}, Price: {service.Price} {service.Currency}");
+            Console.WriteLine($"ID: {service.Id}, Name: {service.ServiceName}, Price: {service.Price} ");
         }
         Console.Write("Select Service ID: ");
         if (!int.TryParse(Console.ReadLine(), out int serviceId))
@@ -226,7 +226,6 @@ public class ProjectMenu(
         // Converts numeric ID to "P-123" format
         var projectIdString = $"P-{projectId}";
 
-        // Retrieves the existing project
         var existingProject = await _projectService.GetProjectByIdAsync(projectIdString);
         if (existingProject == null)
         {
@@ -235,7 +234,6 @@ public class ProjectMenu(
             return;
         }
 
-        // Pre-fills data and allow user to modify fields
         Console.Write($"Enter New Project Title (Current: {existingProject.Title}): ");
         var title = Console.ReadLine()?.Trim();
         title = string.IsNullOrWhiteSpace(title) ? existingProject.Title : title;
@@ -290,7 +288,7 @@ public class ProjectMenu(
         var services = await _serviceService.GetAllServicesAsync();
         foreach (var service in services)
         {
-            Console.WriteLine($"ID: {service.Id}, Name: {service.ServiceName}, Price: {service.Price} {service.Currency}");
+            Console.WriteLine($"ID: {service.Id}, Name: {service.ServiceName}, Price: {service.Price} ");
         }
         Console.Write($"Select Service ID (Current: {existingProject.ServiceId}): ");
         if (!int.TryParse(Console.ReadLine(), out int serviceId))
@@ -307,7 +305,16 @@ public class ProjectMenu(
             endDate = DateTime.UtcNow; // Set EndDate only if it was previously null
         }
 
-        
+        Console.Write("\nDo you want to save these changes? (Y/N): ");
+        var confirmation = Console.ReadLine()?.Trim().ToUpper();
+
+        if (confirmation != "Y")
+        {
+            Console.WriteLine("Changes discarded. Returning to menu...");
+            Console.ReadKey();
+            return;
+        } 
+
         var form = new ProjectRegistrationForm
         {
             Title = title,

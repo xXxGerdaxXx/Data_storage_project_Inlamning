@@ -59,15 +59,21 @@ public class EmployeeMenu(IEmployeeService employeeService, IRoleService roleSer
         }
         else
         {
+            // Print header row
+            Console.WriteLine($"{"ID",-5} {"First Name",-15} {"Last Name",-15} {"Email",-30} {"Role Name",-15}");
+            Console.WriteLine(new string('-', 80));
+
             foreach (var employee in employees)
             {
-                Console.WriteLine($"ID: {employee.Id}, Name: {employee.FirstName} {employee.LastName}, Email: {employee.Email}, Role: {employee.Role.RoleName}");
+                Console.WriteLine($"{employee.Id,-5} {employee.FirstName,-15} {employee.LastName,-15} {employee.Email,-30} {employee.RoleName,-15}");
             }
         }
 
         Console.WriteLine("\nPress any key to return...");
         Console.ReadKey();
     }
+
+
 
     private async Task AddNewEmployeeAsync()
     {
@@ -149,7 +155,8 @@ public class EmployeeMenu(IEmployeeService employeeService, IRoleService roleSer
         Console.WriteLine("\nAvailable Employees:");
         foreach (var employee in employees)
         {
-            Console.WriteLine($"ID: {employee.Id}, Name: {employee.FirstName} {employee.LastName}, Email: {employee.Email}, Role: {employee.Role.RoleName}");
+            Console.WriteLine($"ID: {employee.Id}, Name: {employee.FirstName} {employee.LastName}, Email: {employee.Email}, Role Id: {employee.RoleId}, Role: {employee.RoleName}"); 
+
         }
 
         Console.Write("Enter Employee ID to update: ");
@@ -193,6 +200,16 @@ public class EmployeeMenu(IEmployeeService employeeService, IRoleService roleSer
             roleId = existingEmployee.RoleId;
         }
 
+        Console.Write("\nDo you want to save these changes? (Y/N): ");
+        var confirmation = Console.ReadLine()?.Trim().ToUpper();
+
+        if (confirmation != "Y")
+        {
+            Console.WriteLine("Changes discarded. Returning to menu...");
+            Console.ReadKey();
+            return;
+        }
+
         var form = new EmployeeRegistrationForm
         {
             FirstName = firstName,
@@ -222,7 +239,7 @@ public class EmployeeMenu(IEmployeeService employeeService, IRoleService roleSer
         Console.WriteLine("\nAvailable Employees:");
         foreach (var employee in employees)
         {
-            Console.WriteLine($"ID: {employee.Id}, Name: {employee.FirstName} {employee.LastName}, Email: {employee.Email}, Role: {employee.Role.RoleName}");
+            Console.WriteLine($"ID: {employee.Id}, Name: {employee.FirstName} {employee.LastName}, Email: {employee.Email}, RoleId: {employee.RoleId}, Role: {employee.RoleName}");
         }
 
         Console.Write("Enter Employee ID to delete: ");

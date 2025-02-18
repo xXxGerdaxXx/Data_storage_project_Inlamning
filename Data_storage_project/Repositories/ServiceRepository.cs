@@ -9,9 +9,9 @@ public class ServiceRepository(ApplicationDbContext context) : BaseRepository<Se
 {
     private readonly ApplicationDbContext _context = context;
 
-    public async Task<IEnumerable<ServiceEntity>> GetAllServicesAsync()
-    {
-        // Use the base repository's GetAllAsync with eager loading for Currency
-        return await GetAllAsync(s => s.Currency);
-    }
+    //public async Task<IEnumerable<ServiceEntity>> GetAllServicesAsync()
+    //{
+    //    // Use the base repository's GetAllAsync with eager loading for Currency
+    //    return await GetAllAsync(s => s.Currency);
+    //}
 }

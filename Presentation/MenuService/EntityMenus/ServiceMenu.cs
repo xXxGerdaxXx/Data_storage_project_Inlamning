@@ -63,7 +63,7 @@ public class ServiceMenu(IServiceService serviceService, ICurrencyService curren
         {
             foreach (var service in services)
             {
-                Console.WriteLine($"ID: {service.Id}, Name: {service.ServiceName}, Price per hour: {service.Price:F2} {service.Currency.Code}");
+                Console.WriteLine($"ID: {service.Id}, Name: {service.ServiceName}, Price per hour: {service.Price:F2} {service.CurrencyCode}");
             }
         }
 
@@ -148,7 +148,7 @@ public class ServiceMenu(IServiceService serviceService, ICurrencyService curren
         Console.WriteLine("\nAvailable Services:");
         foreach (var service in services)
         {
-            Console.WriteLine($"ID: {service.Id}, Name: {service.ServiceName}, Price: {service.Price:F2} {service.Currency.Code}");
+            Console.WriteLine($"ID: {service.Id}, Name: {service.ServiceName}, Price: {service.Price:F2} {service.CurrencyCode}");
         }
 
         Console.Write("\nEnter Service ID to update: ");
@@ -197,6 +197,16 @@ public class ServiceMenu(IServiceService serviceService, ICurrencyService curren
             currencyId = existingService.CurrencyId;
         }
 
+        Console.Write("\nDo you want to save these changes? (Y/N): ");
+        var confirmation = Console.ReadLine()?.Trim().ToUpper();
+
+        if (confirmation != "Y")
+        {
+            Console.WriteLine("Changes discarded. Returning to menu...");
+            Console.ReadKey();
+            return;
+        }
+
         var form = new ServiceRegistrationForm
         {
             ServiceName = serviceName,
@@ -229,7 +239,7 @@ public class ServiceMenu(IServiceService serviceService, ICurrencyService curren
         Console.WriteLine("\nAvailable Services:");
         foreach (var service in services)
         {
-            Console.WriteLine($"ID: {service.Id}, Name: {service.ServiceName}, Price: {service.Price:F2} {service.Currency.Code}");
+            Console.WriteLine($"ID: {service.Id}, Name: {service.ServiceName}, Price: {service.Price:F2} {service.CurrencyCode}");
         }
 
         Console.Write("\nEnter Service ID to delete: ");

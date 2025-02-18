@@ -48,16 +48,22 @@ public class BaseRepository<T> : IBaseRepository<T> where T : class
     /// - In ProjectRepository, I could include the project’s status or assigned employee.
     /// </summary>
 
-    public async Task<IEnumerable<T>> GetAllAsync(params Expression<Func<T, object>>[] includeProperties)
+    //public async Task<IEnumerable<T>> GetAllAsync(params Expression<Func<T, object>>[] includeProperties)
+    //{
+    //    IQueryable<T> query = _dbSet;
+
+    //    foreach (var includeProperty in includeProperties)
+    //    {
+    //        query = query.Include(includeProperty); 
+    //    }
+
+    //    return await query.ToListAsync();
+    //}
+
+
+    public virtual async Task<IEnumerable<T>> GetAllAsync()
     {
-        IQueryable<T> query = _dbSet;
-
-        foreach (var includeProperty in includeProperties)
-        {
-            query = query.Include(includeProperty); 
-        }
-
-        return await query.ToListAsync();
+        return await _dbSet.ToListAsync();
     }
 
 /// <summary>

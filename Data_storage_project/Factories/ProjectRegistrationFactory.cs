@@ -13,7 +13,7 @@ public static class ProjectRegistrationFactory
 
         return new ProjectEntity
         {
-            Id = generatedId, // Assigns the ID provided by the service
+            Id = generatedId, 
             Title = form.Title,
             Description = form.Description,
             StartDate = form.StartDate,

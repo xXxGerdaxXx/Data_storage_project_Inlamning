@@ -14,6 +14,23 @@ namespace Data_storage_project_library.Repositories
     {
         private readonly ApplicationDbContext _context = context;
 
+        public override async Task<IEnumerable<ProjectEntity>> GetAllAsync()
+        {
+            Console.WriteLine("Fetching all projects...");
+
+            var entities = await _context.Projects
+                .Include(x => x.Customer)
+                .Include(x => x.Employee)
+                .Include(x => x.Status)
+                .Include(x => x.Service)
+                .ToListAsync();
+
+            Console.WriteLine($"Total projects fetched: {entities.Count}");
+
+            return entities;
+        }
+
+
         public async Task<ProjectEntity?> GetLastProjectAsync()
         {
             return await _context.Projects
