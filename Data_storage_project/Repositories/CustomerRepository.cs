@@ -1,14 +1,85 @@
 ﻿using Data_storage_project_library.Contexts;
 using Data_storage_project_library.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace Data_storage_project_library.Repositories;
 
 public class CustomerRepository(ApplicationDbContext context) : BaseRepository<CustomerEntity>(context)
 {
+    
+    /// <summary>
+    /// Retrieves all customers with their contacts.
+    /// </summary>
     public override async Task<IEnumerable<CustomerEntity>> GetAllAsync()
     {
-        var entitites = await _context.Customers.Include(x => x.CustomerContacts).ToListAsync();
-        return entitites;
+        return await _context.Customers.Include(x => x.CustomerContacts).ToListAsync();
+    }
+
+    /// <summary>
+    /// Creates a new customer and commits transaction.
+    /// </summary>
+    public async Task<CustomerEntity?> CreateCustomerAsync(CustomerEntity customer)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            _context.Customers.Add(customer);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return customer;
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Updates an existing customer and commits transaction.
+    /// </summary>
+    public async Task<CustomerEntity?> UpdateCustomerAsync(CustomerEntity customer)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            _context.Customers.Update(customer);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return customer;
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Deletes a customer and their associated contacts.
+    /// </summary>
+    public async Task<bool> DeleteCustomerAsync(int customerId)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var customer = await _context.Customers
+                .Include(c => c.CustomerContacts)
+                .FirstOrDefaultAsync(c => c.Id == customerId);
+
+            if (customer == null)
+                return false;
+
+            _context.Customers.Remove(customer);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return true;
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 }

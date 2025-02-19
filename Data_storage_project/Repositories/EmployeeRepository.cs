@@ -6,7 +6,7 @@ namespace Data_storage_project_library.Repositories;
 
 public class EmployeeRepository(ApplicationDbContext context) : BaseRepository<EmployeeEntity>(context)
 {
-    private readonly ApplicationDbContext _context = context;
+    
 
     // Override GetAllAsync to include Role when fetching employees
     public async Task<IEnumerable<EmployeeEntity>> GetAllEmployeesWithRolesAsync()

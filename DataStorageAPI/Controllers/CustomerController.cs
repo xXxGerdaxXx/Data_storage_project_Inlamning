@@ -2,7 +2,6 @@
 using Data_storage_project_library.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
-
 namespace DataStorageAPI.Controllers;
 
 [Route("api/customers")]
@@ -11,6 +10,9 @@ public class CustomerController(ICustomerService customerService) : ControllerBa
 {
     private readonly ICustomerService _customerService = customerService;
 
+    /// <summary>
+    /// Get all customers with their contact details.
+    /// </summary>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CustomerDto>>> GetAllCustomers()
     {
@@ -18,6 +20,9 @@ public class CustomerController(ICustomerService customerService) : ControllerBa
         return Ok(customers);
     }
 
+    /// <summary>
+    /// Get a single customer by ID, including all their contacts.
+    /// </summary>
     [HttpGet("{id}")]
     public async Task<ActionResult<CustomerDto>> GetCustomerById(int id)
     {
@@ -28,6 +33,9 @@ public class CustomerController(ICustomerService customerService) : ControllerBa
         return Ok(customer);
     }
 
+    /// <summary>
+    /// Register a new customer with multiple contacts.
+    /// </summary>
     [HttpPost]
     public async Task<ActionResult<CustomerDto>> RegisterCustomer([FromBody] CustomerRegistrationForm form)
     {
@@ -41,9 +49,11 @@ public class CustomerController(ICustomerService customerService) : ControllerBa
         return CreatedAtAction(nameof(GetCustomerById), new { id = createdCustomer.Id }, createdCustomer);
     }
 
-
+    /// <summary>
+    /// Update customer details, including contacts.
+    /// </summary>
     [HttpPut("{id}")]
-    public async Task<ActionResult<CustomerDto>> UpdateCustomer(int id, [FromBody] CustomerRegistrationForm form)
+    public async Task<ActionResult<CustomerDto>> UpdateCustomer(int id, [FromBody] CustomerUpdateForm form)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -55,7 +65,9 @@ public class CustomerController(ICustomerService customerService) : ControllerBa
         return Ok(updatedCustomer);
     }
 
-
+    /// <summary>
+    /// Delete a customer and all associated contacts.
+    /// </summary>
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteCustomer(int id)
     {
@@ -66,4 +78,43 @@ public class CustomerController(ICustomerService customerService) : ControllerBa
         return NoContent();
     }
 
+    /// <summary>
+    /// Add a new contact to an existing customer.
+    /// </summary>
+    [HttpPost("{customerId}/contacts")]
+    public async Task<ActionResult<CustomerDto>> AddCustomerContact(int customerId, [FromBody] CustomerContactDto contactDto)
+    {
+        var updatedCustomer = await _customerService.AddCustomerContactAsync(customerId, contactDto);
+        if (updatedCustomer == null)
+            return NotFound($"Customer with ID {customerId} not found.");
+
+        return Ok(updatedCustomer);
+    }
+
+
+    /// <summary>
+    /// Update a specific contact for a customer.
+    /// </summary>
+    [HttpPut("{customerId}/contacts/{contactId}")]
+    public async Task<ActionResult<CustomerDto>> UpdateCustomerContact(int customerId, int contactId, [FromBody] CustomerContactDto contactDto)
+    {
+        var updatedCustomer = await _customerService.UpdateCustomerContactAsync(customerId, contactId, contactDto);
+        if (updatedCustomer == null)
+            return NotFound($"Customer with ID {customerId} or Contact with ID {contactId} not found.");
+
+        return Ok(updatedCustomer);
+    }
+
+    /// <summary>
+    /// Delete a specific contact from a customer.
+    /// </summary>
+    [HttpDelete("{customerId}/contacts/{contactId}")]
+    public async Task<ActionResult> DeleteCustomerContact(int customerId, int contactId)
+    {
+        var isDeleted = await _customerService.DeleteCustomerContactAsync(customerId, contactId);
+        if (!isDeleted)
+            return NotFound($"Customer with ID {customerId} or Contact with ID {contactId} not found.");
+
+        return NoContent();
+    }
 }

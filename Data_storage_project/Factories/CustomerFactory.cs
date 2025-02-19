@@ -1,10 +1,6 @@
 ﻿using Data_storage_project_library.Dtos;
 using Data_storage_project_library.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Data_storage_project_library.Repositories;
 
 namespace Data_storage_project_library.Factories;
 
@@ -16,17 +12,15 @@ public static class CustomerFactory
         {
             Id = entity.Id,
             CustomerName = entity.CustomerName,
-            CustomerContact = entity.CustomerContacts.Select(x => new CustomerContactDto
+
+            CustomerContacts = entity.CustomerContacts.Select(x => new CustomerContactDto
             {
                 Id = x.Id,
                 FirstName = x.FirstName,
                 LastName = x.LastName,
                 Email = x.Email,
-                Phone = x.Phone,
-
-            }).ToList(),
-           
-
-            };
-        }
+                Phone = x.Phone
+            }).ToList()
+        };
+    }
 }
