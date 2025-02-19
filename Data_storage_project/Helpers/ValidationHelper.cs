@@ -1,26 +1,42 @@
 ﻿using System;
-using System.Linq;
-using System.Net.Mail;
+using System.Text.RegularExpressions;
 
-namespace Data_storage_project_library.Helpers;
-
-public static class ValidationHelper
+namespace Data_storage_project_library.Helpers
 {
-    public static bool IsValidEmail(string email)
+    public static partial class ValidationHelper
     {
-        try
+        public static bool IsValidEmail(string email)
         {
-            var addr = new MailAddress(email);
-            return addr.Address == email;
-        }
-        catch
-        {
-            return false;
-        }
-    }
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
 
-    public static bool IsValidPhoneNumber(string phone)
-    {
-        return phone.All(char.IsDigit) && phone.Length >= 7 && phone.Length <= 15;
+            return Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+        }
+
+        public static bool IsValidPhoneNumber(string phoneNumber)
+        {
+            if (string.IsNullOrWhiteSpace(phoneNumber))
+                return false;
+
+            return Regex.IsMatch(phoneNumber, @"^\+?[1-9]\d{1,14}$"); 
+        }
+
+        public static string GetValidatedInput(string prompt, bool required = true)
+        {
+            string input;
+            do
+            {
+                Console.Write(prompt);
+                input = Console.ReadLine()?.Trim() ?? string.Empty;
+
+                if (required && string.IsNullOrWhiteSpace(input))
+                {
+                    Console.WriteLine("Error: This field is required. Please enter a value.");
+                }
+
+            } while (required && string.IsNullOrWhiteSpace(input));
+
+            return input;
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Data_storage_project_library.Dtos;
+using Data_storage_project_library.Helpers;
 using Data_storage_project_library.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,9 +7,10 @@ namespace DataStorageAPI.Controllers;
 
 [Route("api/customers")]
 [ApiController]
-public class CustomerController(ICustomerService customerService) : ControllerBase
+public class CustomerController(ICustomerService customerService, ICustomerContactService customerContactService) : ControllerBase
 {
     private readonly ICustomerService _customerService = customerService;
+    private readonly ICustomerContactService _customerContactService = customerContactService;
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CustomerDto>>> GetAllCustomers()
@@ -66,17 +68,29 @@ public class CustomerController(ICustomerService customerService) : ControllerBa
     [HttpPost("{customerId}/contacts")]
     public async Task<ActionResult<CustomerDto>> AddCustomerContact(int customerId, [FromBody] CustomerContactDto contactDto)
     {
-        var updatedCustomer = await _customerService.AddCustomerContactAsync(customerId, contactDto);
+        if (!string.IsNullOrWhiteSpace(contactDto.Email) && !ValidationHelper.IsValidEmail(contactDto.Email))
+            return BadRequest("Invalid email format.");
+
+        if (!string.IsNullOrWhiteSpace(contactDto.Phone) && !ValidationHelper.IsValidPhoneNumber(contactDto.Phone))
+            return BadRequest("Invalid phone number format.");
+
+        var updatedCustomer = await _customerContactService.AddCustomerContactAsync(customerId, contactDto);
         if (updatedCustomer == null)
             return NotFound($"Customer with ID {customerId} not found.");
 
-        return Ok(updatedCustomer);
+        return CreatedAtAction(nameof(GetCustomerById), new { id = updatedCustomer.Id }, updatedCustomer);
     }
 
     [HttpPut("{customerId}/contacts/{contactId}")]
     public async Task<ActionResult<CustomerDto>> UpdateCustomerContact(int customerId, int contactId, [FromBody] CustomerContactDto contactDto)
     {
-        var updatedCustomer = await _customerService.UpdateCustomerContactAsync(customerId, contactId, contactDto);
+        if (!string.IsNullOrWhiteSpace(contactDto.Email) && !ValidationHelper.IsValidEmail(contactDto.Email))
+            return BadRequest("Invalid email format.");
+
+        if (!string.IsNullOrWhiteSpace(contactDto.Phone) && !ValidationHelper.IsValidPhoneNumber(contactDto.Phone))
+            return BadRequest("Invalid phone number format.");
+
+        var updatedCustomer = await _customerContactService.UpdateCustomerContactAsync(customerId, contactId, contactDto);
         if (updatedCustomer == null)
             return NotFound($"Customer with ID {customerId} or Contact with ID {contactId} not found.");
 
@@ -86,7 +100,7 @@ public class CustomerController(ICustomerService customerService) : ControllerBa
     [HttpDelete("{customerId}/contacts/{contactId}")]
     public async Task<ActionResult> DeleteCustomerContact(int customerId, int contactId)
     {
-        var isDeleted = await _customerService.DeleteCustomerContactAsync(customerId, contactId);
+        var isDeleted = await _customerContactService.DeleteCustomerContactAsync(customerId, contactId);
         if (!isDeleted)
             return NotFound($"Customer with ID {customerId} or Contact with ID {contactId} not found.");
 

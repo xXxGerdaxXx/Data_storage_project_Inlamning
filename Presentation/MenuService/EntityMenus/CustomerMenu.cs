@@ -5,9 +5,10 @@ using Data_storage_project_library.Helpers;
 
 namespace Presentation.MenuService.EntityMenus;
 
-public class CustomerMenu(ICustomerService customerService)
+public class CustomerMenu(ICustomerService customerService, ICustomerContactService customerContactService)
 {
     private readonly ICustomerService _customerService = customerService;
+    private readonly ICustomerContactService _customerContactService = customerContactService;
 
     public async Task RunAsync()
     {
@@ -113,7 +114,7 @@ public class CustomerMenu(ICustomerService customerService)
         Console.Clear();
         Console.WriteLine($"=== Contact Details for {customer.CustomerName} ===");
 
-        if (customer.CustomerContacts == null || !customer.CustomerContacts.Any())
+        if (customer.CustomerContacts == null || customer.CustomerContacts.Count == 0)
         {
             Console.WriteLine("No contact details found for this customer.");
         }
@@ -225,7 +226,7 @@ public class CustomerMenu(ICustomerService customerService)
             Console.WriteLine($"Managing Contacts for: {customer.CustomerName}");
             Console.WriteLine("\nExisting Contacts:");
 
-            if (!customer.CustomerContacts.Any())
+            if (customer.CustomerContacts.Count == 0)
             {
                 Console.WriteLine("No contacts found for this customer.");
             }
@@ -318,7 +319,7 @@ public class CustomerMenu(ICustomerService customerService)
             Phone = phone
         };
 
-        var updatedCustomer = await _customerService.UpdateCustomerContactAsync(customerId, contactId, updatedContact);
+        var updatedCustomer = await _customerContactService.UpdateCustomerContactAsync(customerId, contactId, updatedContact);
 
         if (updatedCustomer != null)
         {
@@ -346,7 +347,7 @@ public class CustomerMenu(ICustomerService customerService)
             firstName = Console.ReadLine()?.Trim() ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(firstName))
-                Console.WriteLine("❌ Error: First Name cannot be empty. Please enter a valid name.");
+                Console.WriteLine(" Error: First Name cannot be empty. Please enter a valid name.");
         } while (string.IsNullOrWhiteSpace(firstName));
 
         do
@@ -355,7 +356,7 @@ public class CustomerMenu(ICustomerService customerService)
             lastName = Console.ReadLine()?.Trim() ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(lastName))
-                Console.WriteLine("❌ Error: Last Name cannot be empty. Please enter a valid name.");
+                Console.WriteLine(" Error: Last Name cannot be empty. Please enter a valid name.");
         } while (string.IsNullOrWhiteSpace(lastName));
 
         do
@@ -364,7 +365,7 @@ public class CustomerMenu(ICustomerService customerService)
             email = Console.ReadLine()?.Trim() ?? string.Empty;
 
             if (!string.IsNullOrWhiteSpace(email) && !ValidationHelper.IsValidEmail(email))
-                Console.WriteLine("⚠️ Warning: Invalid email format. Try again or leave it empty.");
+                Console.WriteLine(" Warning: Invalid email format. Try again or leave it empty.");
             else
                 break;
         } while (!string.IsNullOrWhiteSpace(email));
@@ -375,7 +376,7 @@ public class CustomerMenu(ICustomerService customerService)
             phoneNumber = Console.ReadLine()?.Trim() ?? string.Empty;
 
             if (!string.IsNullOrWhiteSpace(phoneNumber) && !ValidationHelper.IsValidPhoneNumber(phoneNumber))
-                Console.WriteLine("⚠️ Warning: Invalid phone number format. Try again or leave it empty.");
+                Console.WriteLine(" Warning: Invalid phone number format. Try again or leave it empty.");
             else
                 break;
         } while (!string.IsNullOrWhiteSpace(phoneNumber));
@@ -388,8 +389,8 @@ public class CustomerMenu(ICustomerService customerService)
             Phone = phoneNumber
         };
 
-        var updatedCustomer = await _customerService.AddCustomerContactAsync(customerId, contact);
-        Console.WriteLine(updatedCustomer != null ? "✅ Contact added successfully!" : "❌ Error adding contact.");
+        var updatedCustomer = await _customerContactService.AddCustomerContactAsync(customerId, contact);
+        Console.WriteLine(updatedCustomer != null ? " Contact added successfully!" : " Error adding contact.");
         Console.ReadKey();
     }
 
@@ -404,7 +405,7 @@ public class CustomerMenu(ICustomerService customerService)
             return;
         }
 
-        var success = await _customerService.DeleteCustomerContactAsync(customerId, contactId);
+        var success = await _customerContactService.DeleteCustomerContactAsync(customerId, contactId);
         Console.WriteLine(success ? "Contact deleted successfully!" : "Contact not found.");
 
         Console.ReadKey();
