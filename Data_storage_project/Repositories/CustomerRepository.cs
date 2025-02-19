@@ -7,18 +7,11 @@ namespace Data_storage_project_library.Repositories;
 
 public class CustomerRepository(ApplicationDbContext context) : BaseRepository<CustomerEntity>(context)
 {
-    
-    /// <summary>
-    /// Retrieves all customers with their contacts.
-    /// </summary>
     public override async Task<IEnumerable<CustomerEntity>> GetAllAsync()
     {
         return await _context.Customers.Include(x => x.CustomerContacts).ToListAsync();
     }
 
-    /// <summary>
-    /// Creates a new customer and commits transaction.
-    /// </summary>
     public async Task<CustomerEntity?> CreateCustomerAsync(CustomerEntity customer)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
@@ -36,9 +29,6 @@ public class CustomerRepository(ApplicationDbContext context) : BaseRepository<C
         }
     }
 
-    /// <summary>
-    /// Updates an existing customer and commits transaction.
-    /// </summary>
     public async Task<CustomerEntity?> UpdateCustomerAsync(CustomerEntity customer)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
@@ -56,9 +46,6 @@ public class CustomerRepository(ApplicationDbContext context) : BaseRepository<C
         }
     }
 
-    /// <summary>
-    /// Deletes a customer and their associated contacts.
-    /// </summary>
     public async Task<bool> DeleteCustomerAsync(int customerId)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
