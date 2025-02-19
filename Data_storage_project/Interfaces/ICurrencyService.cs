@@ -5,9 +5,9 @@ namespace Data_storage_project_library.Interfaces;
 
 public interface ICurrencyService
 {
-    Task<CurrencyEntity?> RegisterCurrencyAsync(CurrencyRegistrationForm form);
-    Task<IEnumerable<CurrencyEntity>> GetAllCurrenciesAsync();
-    Task<CurrencyEntity?> GetCurrencyByIdAsync(int currencyId);
-    Task<CurrencyEntity?> UpdateCurrencyAsync(int currencyId, CurrencyRegistrationForm form);
+    Task<CurrencyDto?> RegisterCurrencyAsync(CurrencyRegistrationForm form);
+    Task<IEnumerable<CurrencyDto>> GetAllCurrenciesAsync();
+    Task<CurrencyDto?> GetCurrencyByIdAsync(int currencyId);
+    Task<CurrencyDto?> UpdateCurrencyAsync(int currencyId, CurrencyRegistrationForm form);
     Task<bool> DeleteCurrencyAsync(int currencyId);
 }

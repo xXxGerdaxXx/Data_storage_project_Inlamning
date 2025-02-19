@@ -7,7 +7,7 @@ namespace Data_storage_project_library.Repositories;
 
 public class ServiceRepository(ApplicationDbContext context) : BaseRepository<ServiceEntity>(context)
 {
-    private readonly ApplicationDbContext _context = context;
+    
 
     //public async Task<IEnumerable<ServiceEntity>> GetAllServicesAsync()
     //{

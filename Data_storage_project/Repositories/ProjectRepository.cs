@@ -12,7 +12,7 @@ namespace Data_storage_project_library.Repositories
 {
     public class ProjectRepository(ApplicationDbContext context) : BaseRepository<ProjectEntity>(context)
     {
-        private readonly ApplicationDbContext _context = context;
+        
 
         public override async Task<IEnumerable<ProjectEntity>> GetAllAsync()
         {

@@ -4,6 +4,9 @@ using Data_storage_project_library.Entities;
 using Data_storage_project_library.Factories;
 using Data_storage_project_library.Interfaces;
 using Data_storage_project_library.Repositories;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Data_storage_project_library.Services;
 
@@ -12,12 +15,15 @@ public class CurrencyService(IBaseRepository<CurrencyEntity> currencyRepository,
     private readonly IBaseRepository<CurrencyEntity> _currencyRepository = currencyRepository;
     private readonly ApplicationDbContext _context = context;
 
-    public async Task<CurrencyEntity?> RegisterCurrencyAsync(CurrencyRegistrationForm form)
+    /// <summary>
+    /// Registers a new currency.
+    /// </summary>
+    public async Task<CurrencyDto?> RegisterCurrencyAsync(CurrencyRegistrationForm form)
     {
         if (form == null)
             throw new ArgumentNullException(nameof(form), "Currency registration form cannot be null.");
 
-        using (var transaction = await _context.Database.BeginTransactionAsync()) 
+        using (var transaction = await _context.Database.BeginTransactionAsync())
         {
             try
             {
@@ -33,40 +39,51 @@ public class CurrencyService(IBaseRepository<CurrencyEntity> currencyRepository,
                     Name = form.Name
                 });
 
-                _context.Currencies.Add(currency); 
+                _context.Currencies.Add(currency);
                 await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
-                return currency;
+
+                return ConvertToDto(currency);
             }
             catch (Exception)
             {
-                await transaction.RollbackAsync(); 
+                await transaction.RollbackAsync();
                 throw;
             }
         }
     }
 
-    public async Task<IEnumerable<CurrencyEntity>> GetAllCurrenciesAsync()
+    /// <summary>
+    /// Retrieves all currencies.
+    /// </summary>
+    public async Task<IEnumerable<CurrencyDto>> GetAllCurrenciesAsync()
     {
-        return await _currencyRepository.GetAllAsync();
+        var currencies = await _currencyRepository.GetAllAsync();
+        return currencies.Select(ConvertToDto);
     }
 
-    public async Task<CurrencyEntity?> GetCurrencyByIdAsync(int currencyId)
+    /// <summary>
+    /// Retrieves a currency by ID.
+    /// </summary>
+    public async Task<CurrencyDto?> GetCurrencyByIdAsync(int currencyId)
     {
         var currency = await _currencyRepository.GetAsync(c => c.Id == currencyId);
         if (currency == null)
             throw new KeyNotFoundException($"Currency with ID {currencyId} not found.");
 
-        return currency;
+        return ConvertToDto(currency);
     }
 
-    public async Task<CurrencyEntity?> UpdateCurrencyAsync(int currencyId, CurrencyRegistrationForm form)
+    /// <summary>
+    /// Updates an existing currency.
+    /// </summary>
+    public async Task<CurrencyDto?> UpdateCurrencyAsync(int currencyId, CurrencyRegistrationForm form)
     {
         if (form == null)
             throw new ArgumentNullException(nameof(form), "Currency registration form cannot be null.");
 
-        using (var transaction = await _context.Database.BeginTransactionAsync()) 
+        using (var transaction = await _context.Database.BeginTransactionAsync())
         {
             try
             {
@@ -83,21 +100,25 @@ public class CurrencyService(IBaseRepository<CurrencyEntity> currencyRepository,
                 existingCurrency.Code = normalizedCode;
                 existingCurrency.Name = form.Name;
 
-                await _context.SaveChangesAsync(); 
+                await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                return existingCurrency;
+
+                return ConvertToDto(existingCurrency);
             }
             catch (Exception)
             {
-                await transaction.RollbackAsync(); 
+                await transaction.RollbackAsync();
                 throw;
             }
         }
     }
 
+    /// <summary>
+    /// Deletes a currency by ID.
+    /// </summary>
     public async Task<bool> DeleteCurrencyAsync(int currencyId)
     {
-        using (var transaction = await _context.Database.BeginTransactionAsync()) 
+        using (var transaction = await _context.Database.BeginTransactionAsync())
         {
             try
             {
@@ -105,7 +126,7 @@ public class CurrencyService(IBaseRepository<CurrencyEntity> currencyRepository,
                 if (currency == null)
                     throw new KeyNotFoundException($"Currency with ID {currencyId} not found.");
 
-                _context.Currencies.Remove(currency); 
+                _context.Currencies.Remove(currency);
                 await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
@@ -113,9 +134,22 @@ public class CurrencyService(IBaseRepository<CurrencyEntity> currencyRepository,
             }
             catch (Exception)
             {
-                await transaction.RollbackAsync(); 
+                await transaction.RollbackAsync();
                 throw;
             }
         }
+    }
+
+    /// <summary>
+    /// Converts a CurrencyEntity to CurrencyDto.
+    /// </summary>
+    private static CurrencyDto ConvertToDto(CurrencyEntity entity)
+    {
+        return new CurrencyDto
+        {
+            Id = entity.Id,
+            Code = entity.Code,
+            Name = entity.Name
+        };
     }
 }

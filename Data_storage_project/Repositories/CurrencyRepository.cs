@@ -6,5 +6,5 @@ namespace Data_storage_project_library.Repositories;
 
 public class CurrencyRepository(ApplicationDbContext context) : BaseRepository<CurrencyEntity>(context)
 {
-    private readonly ApplicationDbContext _context = context;
+   
 }

@@ -1,19 +1,14 @@
 ﻿using Data_storage_project_library.Contexts;
 using Data_storage_project_library.Entities;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Data_storage_project_library.Repositories
+namespace Data_storage_project_library.Repositories;
+
+public class CustomerRepository(ApplicationDbContext context) : BaseRepository<CustomerEntity>(context)
 {
-    public class CustomerRepository : BaseRepository<CustomerEntity>
+    public override async Task<IEnumerable<CustomerEntity>> GetAllAsync()
     {
-        public CustomerRepository(ApplicationDbContext context) : base(context)
-        {
-        }
+        var entitites = await _context.Customers.Include(x => x.CustomerContacts).ToListAsync();
+        return entitites;
     }
-
 }

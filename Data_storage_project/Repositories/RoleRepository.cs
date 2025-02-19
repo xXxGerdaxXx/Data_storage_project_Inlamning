@@ -10,5 +10,5 @@ namespace Data_storage_project_library.Repositories;
 
 public class RoleRepository(ApplicationDbContext context) : BaseRepository<RoleEntity>(context)
 {
-    private readonly ApplicationDbContext _context = context;
+    
 }

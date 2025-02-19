@@ -47,44 +47,43 @@ public class CustomerMenu(ICustomerService customerService)
 
     private async Task ViewAllCustomersAsync()
     {
-        while (true) 
+        Console.Clear();
+        Console.WriteLine("=== All Customers ===");
+
+        var customers = await _customerService.GetAllCustomersAsync();
+        if (customers == null || !customers.Any())
         {
-            Console.Clear();
-            Console.WriteLine("=== All Customers ===");
-
-            var customers = await _customerService.GetAllCustomersAsync();
-            if (customers == null || !customers.Any())
+            Console.WriteLine("No customers found.");
+        }
+        else
+        {
+            foreach (var customer in customers)
             {
-                Console.WriteLine("No customers found.");
-            }
-            else
-            {
-                foreach (var customer in customers)
-                {
-                    Console.WriteLine($"ID: {customer.Id}, Name: {customer.CustomerName}");
-                }
-            }
-
-            Console.WriteLine("\nOptions:");
-            Console.WriteLine("1. View Customer Contact Details");
-            Console.WriteLine("2. Back to Main Menu");
-            Console.Write("\nEnter your choice: ");
-
-            var choice = Console.ReadLine();
-            switch (choice)
-            {
-                case "1":
-                    await ViewCustomerContactAsync();
-                    break;
-                case "2":
-                    return; 
-                default:
-                    Console.WriteLine("Invalid choice. Press any key to try again...");
-                    Console.ReadKey();
-                    break;
+                Console.WriteLine($"ID: {customer.Id}, Name: {customer.CustomerName}");
             }
         }
+
+        Console.WriteLine("\nOptions:");
+        Console.WriteLine("1. View Customer Contact Details");
+        Console.WriteLine("2. Back to Main Menu");
+        Console.Write("\nEnter your choice: ");
+
+        var choice = Console.ReadLine();
+        switch (choice)
+        {
+            case "1":
+                await ViewCustomerContactAsync();
+                break;
+            case "2":
+                return;
+            default:
+                Console.WriteLine("Invalid choice. Press any key to try again...");
+                Console.ReadKey();
+                break;
+        }
     }
+
+
     private async Task ViewCustomerContactAsync()
     {
         Console.Write("\nEnter the Customer ID to view contact details: ");
@@ -105,28 +104,28 @@ public class CustomerMenu(ICustomerService customerService)
             return;
         }
 
-       
         Console.Clear();
         Console.WriteLine($"=== Contact Details for {customer.CustomerName} ===");
 
-        if (customer.CustomerContacts == null || customer.CustomerContacts.Count == 0)
+     
+        if (customer.CustomerContact == null)
         {
             Console.WriteLine("No contact details found for this customer.");
         }
         else
         {
-            foreach (var contact in customer.CustomerContacts)
-            {
+            foreach (var contact in customer.CustomerContact) {
                 Console.WriteLine($"First Name: {contact.FirstName}");
                 Console.WriteLine($"Last Name: {contact.LastName}");
                 Console.WriteLine($"Email: {contact.Email}");
-                Console.WriteLine($"Phone: {contact.Phone}\n");
+                Console.WriteLine($"Phone: {contact.Phone}");
             }
         }
 
         Console.WriteLine("Press any key to return to the customer list...");
         Console.ReadKey();
     }
+
 
 
     private async Task AddNewCustomerAsync()
@@ -224,23 +223,32 @@ public class CustomerMenu(ICustomerService customerService)
         var customerName = Console.ReadLine()?.Trim();
         customerName = string.IsNullOrWhiteSpace(customerName) ? existingCustomer.CustomerName : customerName;
 
-        var contact = existingCustomer.CustomerContacts.FirstOrDefault();
+        var contacts = existingCustomer.CustomerContact;
 
-        Console.Write($"Enter New First Name (Current: {contact?.FirstName ?? "None"}): ");
-        var firstName = Console.ReadLine()?.Trim();
-        firstName = string.IsNullOrWhiteSpace(firstName) ? contact?.FirstName ?? "" : firstName;
+        var form = new CustomerRegistrationForm();
 
-        Console.Write($"Enter New Last Name (Current: {contact?.LastName ?? "None"}): ");
-        var lastName = Console.ReadLine()?.Trim();
-        lastName = string.IsNullOrWhiteSpace(lastName) ? contact?.LastName ?? "" : lastName;
+        foreach (var contact in contacts)
+        {
+            Console.Write($"Enter New First Name (Current: {contact.FirstName}): ");
+            form.FirstName = Console.ReadLine()?.Trim()!;
+            form.FirstName = string.IsNullOrWhiteSpace(form.FirstName) ? contact?.FirstName : form.FirstName;
 
-        Console.Write($"Enter New Email (Current: {contact?.Email ?? "None"}): ");
-        var email = Console.ReadLine()?.Trim();
-        email = string.IsNullOrWhiteSpace(email) ? contact?.Email ?? "" : email;
+            Console.Write($"Enter New Last Name (Current: {contact?.LastName ?? "None"}): ");
+            var lastName = Console.ReadLine()?.Trim();
+            lastName = string.IsNullOrWhiteSpace(lastName) ? contact?.LastName : lastName;
 
-        Console.Write($"Enter New Phone Number (Current: {contact?.Phone ?? "None"}): ");
-        var phone = Console.ReadLine()?.Trim();
-        phone = string.IsNullOrWhiteSpace(phone) ? contact?.Phone ?? "" : phone;
+            Console.Write($"Enter New Email (Current: {contact?.Email ?? "None"}): ");
+            var email = Console.ReadLine()?.Trim();
+            email = string.IsNullOrWhiteSpace(email) ? contact?.Email  : email;
+
+            Console.Write($"Enter New Phone Number (Current: {contact?.Phone ?? "None"}): ");
+            var phone = Console.ReadLine()?.Trim();
+            phone = string.IsNullOrWhiteSpace(phone) ? contact?.Phone  : phone;
+        }
+
+        
+
+        
 
         Console.Write("\nDo you want to save these changes? (Y/N): ");
         var confirmation = Console.ReadLine()?.Trim().ToUpper();
@@ -252,19 +260,20 @@ public class CustomerMenu(ICustomerService customerService)
             return;
         }
 
-        var form = new CustomerRegistrationForm
-        {
-            CustomerName = customerName,
-            FirstName = firstName,
-            LastName = lastName,
-            Email = email,
-            PhoneNumber = phone
-        };
+        //var form = new CustomerRegistrationForm
+        //{
+        //    CustomerName = customerName,
+        //    FirstName = firstName,
+        //    LastName = lastName,
+        //    Email = email,
+        //    PhoneNumber = phone
+        //};
 
         var updatedCustomer = await _customerService.UpdateCustomerAsync(customerId, form);
         Console.WriteLine(updatedCustomer != null ? "Customer updated successfully!" : "Error updating customer.");
         Console.ReadKey();
     }
+
 
 
 

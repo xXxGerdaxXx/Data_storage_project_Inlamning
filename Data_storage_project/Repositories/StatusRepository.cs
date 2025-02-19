@@ -10,5 +10,5 @@ namespace Data_storage_project_library.Repositories;
 
 public class StatusTypeRepository(ApplicationDbContext context) : BaseRepository<StatusTypeEntity>(context)
 {
-    private readonly ApplicationDbContext _context = context;
+ 
 }

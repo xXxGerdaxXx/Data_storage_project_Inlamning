@@ -18,11 +18,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // ? Register Generic Repository
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 
-
+builder.Services.AddScoped<CustomerRepository>();
 builder.Services.AddScoped<EmployeeRepository>();
 builder.Services.AddScoped<ProjectRepository>();
 builder.Services.AddScoped<RoleRepository>();
 
+builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<StatusService>();
 builder.Services.AddScoped<ServiceService>();
 builder.Services.AddScoped<CurrencyService>();
@@ -31,6 +32,9 @@ builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IServiceService, ServiceService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<ICurrencyService, CurrencyService>();
+builder.Services.AddScoped<IStatusService, StatusService>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
 
 var app = builder.Build();
 

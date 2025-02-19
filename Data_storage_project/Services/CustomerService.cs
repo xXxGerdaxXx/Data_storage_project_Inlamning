@@ -1,9 +1,13 @@
-﻿using Data_storage_project_library.Contexts; 
+﻿using Data_storage_project_library.Contexts;
 using Data_storage_project_library.Dtos;
 using Data_storage_project_library.Entities;
+using Data_storage_project_library.Factories;
 using Data_storage_project_library.Interfaces;
 using Data_storage_project_library.Repositories;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Data_storage_project_library.Services;
 
@@ -12,7 +16,10 @@ public class CustomerService(CustomerRepository customerRepository, ApplicationD
     private readonly CustomerRepository _customerRepository = customerRepository;
     private readonly ApplicationDbContext _context = context;
 
-    public async Task<CustomerEntity?> RegisterCustomerAsync(CustomerRegistrationForm form)
+    /// <summary>
+    /// Registers a new customer and returns the created CustomerDto.
+    /// </summary>
+    public async Task<CustomerDto?> RegisterCustomerAsync(CustomerRegistrationForm form)
     {
         if (form == null)
             throw new ArgumentNullException(nameof(form), "Customer form cannot be null.");
@@ -21,18 +28,17 @@ public class CustomerService(CustomerRepository customerRepository, ApplicationD
         try
         {
             var newCustomer = new CustomerEntity
-
             {
                 CustomerName = form.CustomerName,
                 CustomerContacts =
                 [
                     new()
-                        {
-                            FirstName = form.FirstName,
-                            LastName = form.LastName,
-                            Email = form.Email,
-                            Phone = form.PhoneNumber
-                        }
+                    {
+                        FirstName = form.FirstName,
+                        LastName = form.LastName,
+                        Email = form.Email,
+                        Phone = form.PhoneNumber
+                    }
                 ]
             };
 
@@ -40,7 +46,7 @@ public class CustomerService(CustomerRepository customerRepository, ApplicationD
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            return createdCustomer;
+            return createdCustomer != null ? CustomerFactory.Create(createdCustomer) : null;
         }
         catch (Exception)
         {
@@ -49,51 +55,55 @@ public class CustomerService(CustomerRepository customerRepository, ApplicationD
         }
     }
 
-    public async Task<CustomerEntity?> GetCustomerByIdAsync(int customerId)
+    /// <summary>
+    /// Retrieves a customer by ID and returns a DTO.
+    /// </summary>
+    public async Task<CustomerDto?> GetCustomerByIdAsync(int customerId)
     {
-        return await _context.Customers
+        var customer = await _context.Customers
             .Include(c => c.CustomerContacts)
             .FirstOrDefaultAsync(c => c.Id == customerId);
+
+        if (customer == null)
+            throw new KeyNotFoundException($"Customer with ID {customerId} not found.");
+
+        return CustomerFactory.Create(customer);
     }
 
-    public async Task<IEnumerable<CustomerEntity>> GetAllCustomersAsync()
+    public async Task<IEnumerable<CustomerDto>> GetAllCustomersAsync()
     {
-        return await _customerRepository.GetAllAsync();
+        var customers = await _customerRepository.GetAllAsync();
+        return customers.Select(CustomerFactory.Create);
+            //.Select(ConvertToDto)
+            //.Where(dto => dto != null) 
+            //.Cast<CustomerDto>(); 
     }
 
     public async Task<bool> DeleteCustomerAsync(int customerId)
     {
-        using (var transaction = await _context.Database.BeginTransactionAsync())
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
         {
-            try
-            {
-                var customer = await _context.Customers
-                    .Include (c => c.CustomerContacts) // eager loading (loads customer and contacts together) used chatGPT for this.
-                    .FirstOrDefaultAsync(c => c.Id == customerId);
+            var customer = await _context.Customers
+                .Include(c => c.CustomerContacts)
+                .FirstOrDefaultAsync(c => c.Id == customerId);
 
-                
-                if (customer == null)
-                {
-                    throw new KeyNotFoundException($"Customer with ID {customerId} not found.");
-                }
+            if (customer == null)
+                throw new KeyNotFoundException($"Customer with ID {customerId} not found.");
 
-                _context.Customers.Remove(customer);
-
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return true;
-            }
-            catch (Exception)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+            _context.Customers.Remove(customer);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return true;
         }
-
-
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
-    public async Task<CustomerEntity?> UpdateCustomerAsync(int customerId, CustomerRegistrationForm form)
+    public async Task<CustomerDto?> UpdateCustomerAsync(int customerId, CustomerRegistrationForm form)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
@@ -123,11 +133,12 @@ public class CustomerService(CustomerRepository customerRepository, ApplicationD
                     Phone = form.PhoneNumber
                 });
             }
+
             var updatedCustomer = await _customerRepository.UpdateAsync(existingCustomer, c => c.Id == customerId);
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
-            return updatedCustomer;
+            return updatedCustomer != null ?  CustomerFactory.Create(updatedCustomer) :  null;
         }
         catch (Exception)
         {
@@ -135,4 +146,25 @@ public class CustomerService(CustomerRepository customerRepository, ApplicationD
             throw;
         }
     }
+
+    //private static CustomerDto? ConvertToDto(CustomerEntity? entity)
+    //{
+    //    if (entity == null)
+    //        return null;
+
+    //    return new CustomerDto
+    //    {
+    //        Id = entity.Id,
+    //        CustomerName = entity.CustomerName,
+    //        CustomerContact = entity.CustomerContacts?.FirstOrDefault() != null ? new CustomerContactDto
+    //        {
+    //            Id = entity.CustomerContacts.First().Id,
+    //            FirstName = entity.CustomerContacts.First().FirstName,
+    //            LastName = entity.CustomerContacts.First().LastName,
+    //            Email = entity.CustomerContacts.First().Email,
+    //            Phone = entity.CustomerContacts.First().Phone
+    //        } : null
+    //    };
+    //}
+
 }

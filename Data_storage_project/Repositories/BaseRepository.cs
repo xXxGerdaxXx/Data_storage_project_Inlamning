@@ -6,15 +6,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Data_storage_project_library.Repositories;
 
-public class BaseRepository<T> : IBaseRepository<T> where T : class
+public  class BaseRepository<T> : IBaseRepository<T> where T : class
 {
-    private readonly ApplicationDbContext _context;
+    protected readonly ApplicationDbContext _context;
     private readonly DbSet<T> _dbSet;
 
     public BaseRepository(ApplicationDbContext context)
     {
         _context = context;
-        _dbSet = _context.Set<T>();
+        _dbSet = context.Set<T>();
     }
 
 
