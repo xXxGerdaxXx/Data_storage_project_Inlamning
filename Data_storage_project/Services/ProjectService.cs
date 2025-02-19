@@ -28,7 +28,7 @@ public class ProjectService(ProjectRepository repository, StatusService statusSe
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            return createdProject != null ? ProjectFactory.Create(createdProject) : null; // ✅ Convert to DTO
+            return createdProject != null ? ProjectFactory.Create(createdProject) : null; 
         }
         catch (Exception)
         {
@@ -43,7 +43,7 @@ public class ProjectService(ProjectRepository repository, StatusService statusSe
             throw new ArgumentException("Invalid project ID format. Expected format: 'P-123'.", nameof(projectId));
 
         var project = await _projectRepository.GetAsync(p => p.Id == projectId);
-        return project != null ? ProjectFactory.Create(project) : null; // ✅ Convert to DTO
+        return project != null ? ProjectFactory.Create(project) : null; 
     }
 
     public async Task<IEnumerable<ProjectsDto>> GetAllProjectsAsync()
@@ -56,7 +56,7 @@ public class ProjectService(ProjectRepository repository, StatusService statusSe
             return new List<ProjectsDto>();
         }
 
-        return projects.Select(ProjectFactory.Create).ToList(); // ✅ Convert to DTOs
+        return projects.Select(ProjectFactory.Create).ToList(); 
     }
 
     public async Task<bool> DeleteProjectAsync(string projectId)
@@ -110,7 +110,7 @@ public class ProjectService(ProjectRepository repository, StatusService statusSe
             var updatedProject = await _projectRepository.UpdateAsync(existingProject, p => p.Id == projectId);
             await transaction.CommitAsync();
 
-            return updatedProject != null ? ProjectFactory.Create(updatedProject) : null; // ✅ Convert to DTO
+            return updatedProject != null ? ProjectFactory.Create(updatedProject) : null; 
         }
         catch (Exception)
         {

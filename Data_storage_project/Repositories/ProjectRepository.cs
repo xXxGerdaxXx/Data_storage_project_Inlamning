@@ -16,7 +16,6 @@ namespace Data_storage_project_library.Repositories
 
         public override async Task<IEnumerable<ProjectEntity>> GetAllAsync()
         {
-            Console.WriteLine("Fetching all projects...");
 
             var entities = await _context.Projects
                 .Include(x => x.Customer)
@@ -24,8 +23,6 @@ namespace Data_storage_project_library.Repositories
                 .Include(x => x.Status)
                 .Include(x => x.Service)
                 .ToListAsync();
-
-            Console.WriteLine($"Total projects fetched: {entities.Count}");
 
             return entities;
         }

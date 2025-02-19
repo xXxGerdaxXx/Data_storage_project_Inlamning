@@ -1,6 +1,6 @@
 ﻿using Data_storage_project_library.Dtos;
 using Data_storage_project_library.Interfaces;
-
+using Data_storage_project_library.Helpers;
 
 /// <summary>
 /// Jag använde chatGPT4o för att strukturera visningen åt mig för att visa tillgängliga alternativ 
@@ -11,8 +11,6 @@ using Data_storage_project_library.Interfaces;
 /// Men om status väljs som ''completed'' under registrering eller vid uppdatering av projektet, 
 /// tilldelas det slutdatum för aktuell dag.
 /// </summary>
-
-
 
 namespace Presentation.MenuService.EntityMenus;
 
@@ -70,7 +68,7 @@ public class ProjectMenu(
     private async Task ViewAllProjectsAsync()
     {
         Console.Clear();
-        Console.WriteLine("=== All Projects ===");
+        Console.WriteLine("=== All Projects ===\n");
 
         var projects = await _projectService.GetAllProjectsAsync();
 
@@ -80,22 +78,63 @@ public class ProjectMenu(
         }
         else
         {
-            Console.WriteLine($"{"ID",-6} {"Title",-20} {"Start Date",-12} {"End Date",-12} {"Customer",-20} {"Status",-15} {"Employee",-20} {"Service",-20}");
-            Console.WriteLine(new string('-', 120)); 
+            Console.WriteLine($"{"ID",-6} {"Title",-18} {"Start Date",-12} {"End Date",-12} {"Customer",-15} {"Status",-12} {"Employee",-15} {"Service",-15}");
+            Console.WriteLine(new string('-', 110));
 
             foreach (var project in projects)
             {
+                string startDate = project?.StartDate.ToShortDateString() ?? "Not Set";
                 string endDate = project?.EndDate?.ToShortDateString() ?? "Not Set";
 
-                Console.WriteLine($"{project?.Id,-6} {project?.Title,-20} {project?.StartDate.ToShortDateString(),-12} {endDate,-12} " +
-                                  $"{project?.CustomerName,-20} {project?.StatusName,-15} {project?.EmployeeFullName,-20} {project?.ServiceName,-20}");
+                Console.WriteLine($"{project?.Id,-6} {StringHelper.Truncate(project?.Title, 16),-18} {startDate,-12} {endDate,-12} " +
+                                  $"{StringHelper.Truncate(project?.CustomerName, 13),-15} {StringHelper.Truncate(project?.StatusName, 10),-12} " +
+                                  $"{StringHelper.Truncate(project?.EmployeeFullName, 13),-15} {StringHelper.Truncate(project?.ServiceName, 13),-15}");
             }
+
+            Console.Write("\nEnter Project ID to view details (or press Enter to return): ");
+            string input = Console.ReadLine() ?? string.Empty; 
+            input = input.Trim(); 
+
+            if (int.TryParse(input, out int projectId))
+            {
+                await ViewProjectDetailsAsync(projectId);
+                return;
+            }
+
         }
 
         Console.WriteLine("\nPress any key to return...");
         Console.ReadKey();
     }
 
+    private async Task ViewProjectDetailsAsync(int projectId)
+    {
+        Console.Clear();
+        string projectIdString = $"P-{projectId}"; 
+
+        Console.WriteLine($"=== Project Details (ID: {projectIdString}) ===\n");
+
+        var project = await _projectService.GetProjectByIdAsync(projectIdString);
+
+        if (project == null)
+        {
+            Console.WriteLine("Project not found.");
+        }
+        else
+        {
+            Console.WriteLine($"Title       : {project.Title}");
+            Console.WriteLine($"Start Date  : {project.StartDate.ToShortDateString()}");
+            Console.WriteLine($"End Date    : {(project.EndDate.HasValue ? project.EndDate.Value.ToShortDateString() : "Not Set")}");
+            Console.WriteLine($"Customer    : {project.CustomerName}");
+            Console.WriteLine($"Status      : {project.StatusName}");
+            Console.WriteLine($"Employee    : {project.EmployeeFullName}");
+            Console.WriteLine($"Service     : {project.ServiceName}");
+            Console.WriteLine($"Description :\n{project.Description}");
+        }
+
+        Console.WriteLine("\nPress any key to return...");
+        Console.ReadKey();
+    }
 
 
 
