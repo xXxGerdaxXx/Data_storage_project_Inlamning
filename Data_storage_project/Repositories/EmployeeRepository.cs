@@ -10,12 +10,12 @@ public class EmployeeRepository(ApplicationDbContext context, ILoggerService log
 {
     public async Task<IEnumerable<EmployeeEntity>> GetAllEmployeesWithRolesAsync()
     {
-        return await _context.Employees.Include(e => e.Role).ToListAsync();
+        return await _dbSet.Include(e => e.Role).ToListAsync();
     }
 
     public async Task<EmployeeEntity?> GetEmployeeWithRoleAsync(int employeeId)
     {
-        return await _context.Employees.Include(e => e.Role)
+        return await _dbSet.Include(e => e.Role)
             .FirstOrDefaultAsync(e => e.Id == employeeId);
     }
 }

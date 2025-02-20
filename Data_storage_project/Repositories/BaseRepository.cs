@@ -33,31 +33,19 @@ public  class BaseRepository<T>(ApplicationDbContext context, ILoggerService log
         return await _dbSet.ToListAsync();
     }
 
-    /// <summary>
-    /// Fetches a single record that matches the condition, with the option to include related data.
-    /// This allows me to fetch things like an employee with their role or a service with its currency 
-    /// in a single query instead of making multiple database calls. 
-    /// </summary>
-
-    public async Task<T?> GetAsync(Expression<Func<T, bool>> expression, params Expression<Func<T, object>>[] includeProperties)
+    public async Task<T?> GetAsync(Expression<Func<T, bool>> expression)
     {
         try
         {
-            IQueryable<T> query = _dbSet;
-
-            foreach (var includeProperty in includeProperties)
-            {
-                query = query.Include(includeProperty);
-            }
-
-            return await query.FirstOrDefaultAsync(expression);
+            return await _dbSet.FirstOrDefaultAsync(expression);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error fetching entity: {typeof(T).Name}", ex);  
-            return null;  
+            _logger.LogError($"Error fetching entity: {typeof(T).Name}", ex);
+            return null;
         }
     }
+
 
 
     public async Task<T?> UpdateAsync(T entity, Expression<Func<T, bool>> identifierExpression)

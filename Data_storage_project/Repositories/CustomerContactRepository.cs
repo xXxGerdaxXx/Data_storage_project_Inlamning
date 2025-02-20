@@ -10,6 +10,6 @@ public class CustomerContactRepository(ApplicationDbContext context, ILoggerServ
 {
     public async Task<CustomerContactEntity?> GetByIdAsync(int contactId)
     {
-        return await _context.CustomerContacts.FirstOrDefaultAsync(c => c.Id == contactId);
+        return await _dbSet.FirstOrDefaultAsync(c => c.Id == contactId);
     }
 }

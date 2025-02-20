@@ -10,12 +10,13 @@ public class CustomerRepository(ApplicationDbContext context, ILoggerService log
 {
     public override async Task<IEnumerable<CustomerEntity>> GetAllAsync()
     {
-        return await _context.Customers.Include(c => c.CustomerContacts).ToListAsync();
+        return await _dbSet.Include(c => c.CustomerContacts).ToListAsync();
     }
 
     public async Task<CustomerEntity?> GetByIdAsync(int customerId)
     {
-        return await _context.Customers.Include(c => c.CustomerContacts)
+        return await _dbSet.Include(c => c.CustomerContacts)
             .FirstOrDefaultAsync(c => c.Id == customerId);
     }
 }
+
