@@ -1,11 +1,12 @@
 ﻿using Data_storage_project_library.Contexts;
 using Data_storage_project_library.Entities;
+using Data_storage_project_library.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 
 namespace Data_storage_project_library.Repositories;
 
-public class CustomerRepository(ApplicationDbContext context) : BaseRepository<CustomerEntity>(context)
+public class CustomerRepository(ApplicationDbContext context, ILoggerService logger) : BaseRepository<CustomerEntity>(context, logger)
 {
     public override async Task<IEnumerable<CustomerEntity>> GetAllAsync()
     {

@@ -7,44 +7,27 @@ using Data_storage_project_library.Repositories;
 
 namespace Data_storage_project_library.Services;
 
-public class RoleService(RoleRepository roleRepository, ApplicationDbContext context) : IRoleService
+public class RoleService(IRoleRepository roleRepository, IUnitOfWork unitOfWork) : IRoleService
 {
-    private readonly RoleRepository _roleRepository = roleRepository;
-    private readonly ApplicationDbContext _context = context;
+    private readonly IRoleRepository _roleRepository = roleRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     public async Task<RoleDto?> RegisterRoleAsync(RoleRegistrationForm form)
     {
         if (form == null)
             throw new ArgumentNullException(nameof(form), "Role form cannot be null.");
 
-        using var transaction = await _context.Database.BeginTransactionAsync();
-        try
+        return await _unitOfWork.ExecuteAsync(async () =>
         {
-            var existingRole = await _roleRepository.GetAsync(r => r.RoleName == form.RoleName);
+            var existingRole = await _roleRepository.GetByRoleNameAsync(form.RoleName);
             if (existingRole != null)
                 throw new ArgumentException("Role name already exists.");
 
-            var role = new RoleEntity
-            {
-                RoleName = form.RoleName
-            };
-
+            var role = new RoleEntity { RoleName = form.RoleName };
             var createdRole = await _roleRepository.CreateAsync(role);
 
-            if (createdRole == null)  
-            {
-                await transaction.RollbackAsync();
-                return null;
-            }
-
-            await transaction.CommitAsync();
-            return RoleFactory.Create(createdRole); 
-        }
-        catch (Exception)
-        {
-            await transaction.RollbackAsync();
-            throw;
-        }
+            return createdRole != null ? RoleFactory.Create(createdRole) : null;
+        });
     }
 
 
@@ -57,55 +40,33 @@ public class RoleService(RoleRepository roleRepository, ApplicationDbContext con
     public async Task<RoleDto?> GetRoleByIdAsync(int roleId)
     {
         var role = await _roleRepository.GetAsync(r => r.Id == roleId);
-        return role != null ? RoleFactory.Create(role) : null; 
+        return role != null ? RoleFactory.Create(role) : null;
     }
 
     public async Task<RoleDto?> UpdateRoleAsync(int roleId, RoleRegistrationForm form)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync();
-        try
+        return await _unitOfWork.ExecuteAsync(async () =>
         {
             var existingRole = await _roleRepository.GetAsync(r => r.Id == roleId);
             if (existingRole == null)
                 return null;
 
             existingRole.RoleName = form.RoleName;
-
             var updatedRole = await _roleRepository.UpdateAsync(existingRole, r => r.Id == roleId);
 
-            if (updatedRole == null) 
-            {
-                await transaction.RollbackAsync();
-                return null;
-            }
-
-            await transaction.CommitAsync();
-            return RoleFactory.Create(updatedRole);
-        }
-        catch (Exception)
-        {
-            await transaction.RollbackAsync();
-            throw;
-        }
+            return updatedRole != null ? RoleFactory.Create(updatedRole) : null;
+        });
     }
 
     public async Task<bool> DeleteRoleAsync(int roleId)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync();
-        try
+        return await _unitOfWork.ExecuteAsync(async () =>
         {
             var role = await _roleRepository.GetAsync(r => r.Id == roleId);
             if (role == null)
                 return false;
 
-            await _roleRepository.DeleteAsync(r => r.Id == roleId);
-            await transaction.CommitAsync();
-            return true;
-        }
-        catch (Exception)
-        {
-            await transaction.RollbackAsync();
-            throw;
-        }
+            return await _roleRepository.DeleteAsync(r => r.Id == roleId);
+        });
     }
 }

@@ -2,38 +2,31 @@
 using Data_storage_project_library.Entities;
 using Data_storage_project_library.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Data_storage_project_library.Repositories
+namespace Data_storage_project_library.Repositories;
+
+public class ProjectRepository(ApplicationDbContext context, ILoggerService logger)
+    : BaseRepository<ProjectEntity>(context, logger), IProjectRepository
 {
-    public class ProjectRepository(ApplicationDbContext context) : BaseRepository<ProjectEntity>(context)
+    public async Task<ProjectEntity?> GetByIdAsync(string projectId)
     {
-        
+        return await _dbSet.FirstOrDefaultAsync(p => p.Id == projectId); 
+    }
 
-        public override async Task<IEnumerable<ProjectEntity>> GetAllAsync()
-        {
+    public override async Task<IEnumerable<ProjectEntity>> GetAllAsync()
+    {
+        return await _dbSet 
+            .Include(x => x.Customer)
+            .Include(x => x.Employee)
+            .Include(x => x.Status)
+            .Include(x => x.Service)
+            .ToListAsync();
+    }
 
-            var entities = await _context.Projects
-                .Include(x => x.Customer)
-                .Include(x => x.Employee)
-                .Include(x => x.Status)
-                .Include(x => x.Service)
-                .ToListAsync();
-
-            return entities;
-        }
-
-
-        public async Task<ProjectEntity?> GetLastProjectAsync()
-        {
-            return await _context.Projects
-                .OrderByDescending(p => EF.Functions.Like(p.Id, "P-%") ? Convert.ToInt32(p.Id.Substring(2)) : 0)
-                .FirstOrDefaultAsync();
-        }
-
+    public async Task<ProjectEntity?> GetLastProjectAsync()
+    {
+        return await _dbSet 
+            .OrderByDescending(p => EF.Functions.Like(p.Id, "P-%") ? Convert.ToInt32(p.Id.Substring(2)) : 0)
+            .FirstOrDefaultAsync();
     }
 }

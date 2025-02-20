@@ -1,155 +1,105 @@
-﻿using Data_storage_project_library.Contexts;
-using Data_storage_project_library.Dtos;
-using Data_storage_project_library.Entities;
+﻿using Data_storage_project_library.Interfaces;
 using Data_storage_project_library.Factories;
-using Data_storage_project_library.Interfaces;
-using Data_storage_project_library.Repositories;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Data_storage_project_library.Mappers;
+using Data_storage_project_library.Dtos;
 
 namespace Data_storage_project_library.Services;
 
-public class CurrencyService(IBaseRepository<CurrencyEntity> currencyRepository, ApplicationDbContext context) : ICurrencyService
+public class CurrencyService(ICurrencyRepository currencyRepository, IUnitOfWork unitOfWork, ILoggerService logger) : ICurrencyService
 {
-    private readonly IBaseRepository<CurrencyEntity> _currencyRepository = currencyRepository;
-    private readonly ApplicationDbContext _context = context;
+    private readonly ICurrencyRepository _currencyRepository = currencyRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ILoggerService _logger = logger;  
 
-    /// <summary>
-    /// Registers a new currency.
-    /// </summary>
     public async Task<CurrencyDto?> RegisterCurrencyAsync(CurrencyRegistrationForm form)
     {
         if (form == null)
             throw new ArgumentNullException(nameof(form), "Currency registration form cannot be null.");
 
-        using (var transaction = await _context.Database.BeginTransactionAsync())
+        return await _unitOfWork.ExecuteAsync(async () =>
         {
             try
             {
                 var normalizedCode = form.Code.ToUpper();
-
-                var existingCurrency = await _currencyRepository.GetAsync(c => c.Code == normalizedCode);
+                var existingCurrency = await _currencyRepository.GetByCodeAsync(normalizedCode);
                 if (existingCurrency != null)
-                    throw new ArgumentException($"Currency with code '{normalizedCode}' already exists.");
-
-                var currency = CurrencyRegistrationFactory.CreateCurrency(new CurrencyRegistrationForm
                 {
-                    Code = normalizedCode,
-                    Name = form.Name
-                });
+                    _logger.LogWarning($"Currency with code '{normalizedCode}' already exists.");
+                    throw new ArgumentException($"Currency with code '{normalizedCode}' already exists.");
+                }
 
-                _context.Currencies.Add(currency);
-                await _context.SaveChangesAsync();
+                var currency = CurrencyRegistrationFactory.CreateCurrency(form);
+                var createdCurrency = await _currencyRepository.CreateAsync(currency);
 
-                await transaction.CommitAsync();
+                _logger.LogInformation($"New currency registered: {createdCurrency!.Code}");
 
-                return ConvertToDto(currency);
+                return createdCurrency != null ? CurrencyMapper.ToDto(createdCurrency) : null;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                _logger.LogError($"Error registering currency: {ex.Message}", ex);
                 throw;
             }
-        }
+        });
     }
 
-    /// <summary>
-    /// Retrieves all currencies.
-    /// </summary>
     public async Task<IEnumerable<CurrencyDto>> GetAllCurrenciesAsync()
     {
-        var currencies = await _currencyRepository.GetAllAsync();
-        return currencies.Select(ConvertToDto);
+        var currencies = await _currencyRepository.GetAllAsync() ?? [];
+        return currencies.Select(CurrencyMapper.ToDto);
     }
 
-    /// <summary>
-    /// Retrieves a currency by ID.
-    /// </summary>
     public async Task<CurrencyDto?> GetCurrencyByIdAsync(int currencyId)
     {
         var currency = await _currencyRepository.GetAsync(c => c.Id == currencyId);
         if (currency == null)
             throw new KeyNotFoundException($"Currency with ID {currencyId} not found.");
 
-        return ConvertToDto(currency);
+        return CurrencyMapper.ToDto(currency);
     }
 
-    /// <summary>
-    /// Updates an existing currency.
-    /// </summary>
     public async Task<CurrencyDto?> UpdateCurrencyAsync(int currencyId, CurrencyRegistrationForm form)
     {
         if (form == null)
             throw new ArgumentNullException(nameof(form), "Currency registration form cannot be null.");
 
-        using (var transaction = await _context.Database.BeginTransactionAsync())
+        return await _unitOfWork.ExecuteAsync(async () =>
         {
-            try
-            {
-                var existingCurrency = await _currencyRepository.GetAsync(c => c.Id == currencyId);
-                if (existingCurrency == null)
-                    throw new KeyNotFoundException($"Currency with ID {currencyId} not found.");
+            var existingCurrency = await _currencyRepository.GetAsync(c => c.Id == currencyId)
+                ?? throw new KeyNotFoundException($"Currency with ID {currencyId} not found.");
 
-                var normalizedCode = form.Code.ToUpper();
+            var normalizedCode = form.Code.ToUpper();
+            var duplicateCurrency = await _currencyRepository.GetByCodeAsync(normalizedCode);
+            if (duplicateCurrency is not null && duplicateCurrency.Id != currencyId)
+                throw new ArgumentException($"Another currency with code '{normalizedCode}' already exists.");
 
-                var duplicateCurrency = await _currencyRepository.GetAsync(c => c.Code == normalizedCode && c.Id != currencyId);
-                if (duplicateCurrency != null)
-                    throw new ArgumentException($"Another currency with code '{normalizedCode}' already exists.");
+            existingCurrency.Code = normalizedCode;
+            existingCurrency.Name = form.Name;
 
-                existingCurrency.Code = normalizedCode;
-                existingCurrency.Name = form.Name;
-
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                return ConvertToDto(existingCurrency);
-            }
-            catch (Exception)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-        }
+            var updatedCurrency = await _currencyRepository.UpdateAsync(existingCurrency, c => c.Id == currencyId);
+            return updatedCurrency != null ? CurrencyMapper.ToDto(updatedCurrency) : null;
+        });
     }
 
-    /// <summary>
-    /// Deletes a currency by ID.
-    /// </summary>
     public async Task<bool> DeleteCurrencyAsync(int currencyId)
     {
-        using (var transaction = await _context.Database.BeginTransactionAsync())
+        return await _unitOfWork.ExecuteAsync(async () =>
         {
-            try
+            var currency = await _currencyRepository.GetAsync(c => c.Id == currencyId);
+            if (currency == null)
             {
-                var currency = await _currencyRepository.GetAsync(c => c.Id == currencyId);
-                if (currency == null)
-                    throw new KeyNotFoundException($"Currency with ID {currencyId} not found.");
-
-                _context.Currencies.Remove(currency);
-                await _context.SaveChangesAsync();
-
-                await transaction.CommitAsync();
-                return true;
+                _logger.LogWarning($"Currency with ID {currencyId} not found.");
+                return false;
             }
-            catch (Exception)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-        }
-    }
 
-    /// <summary>
-    /// Converts a CurrencyEntity to CurrencyDto.
-    /// </summary>
-    private static CurrencyDto ConvertToDto(CurrencyEntity entity)
-    {
-        return new CurrencyDto
-        {
-            Id = entity.Id,
-            Code = entity.Code,
-            Name = entity.Name
-        };
+            var isDeleted = await _currencyRepository.DeleteAsync(c => c.Id == currencyId);
+
+            if (isDeleted)
+                _logger.LogInformation($"Currency with ID {currencyId} deleted successfully.");
+            else
+                _logger.LogWarning($"Failed to delete currency with ID {currencyId}.");
+
+            return isDeleted;
+        });
     }
 }

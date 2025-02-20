@@ -1,28 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿using Data_storage_project_library.Entities;
 using Data_storage_project_library.Dtos;
-using Data_storage_project_library.Entities;
 
 namespace Data_storage_project_library.Factories;
 
 public static class ServiceFactory
 {
-    public static ServiceDto Create(ServiceEntity entity)
+    public static ServiceEntity CreateService(ServiceRegistrationForm form)
     {
-        if (entity.Currency == null)
-            throw new InvalidOperationException($"Service {entity.Id} is missing a currency. This should never happen.");
+        if (form == null)
+            throw new ArgumentNullException(nameof(form), "Service form cannot be null.");
 
-        return new ServiceDto
+        return new ServiceEntity
         {
-            Id = entity.Id,
-            ServiceName = entity.ServiceName,
-            Price = entity.Price,
-            CurrencyId = entity.CurrencyId,
-            CurrencyCode = entity.Currency.Code
+            ServiceName = form.ServiceName,
+            Price = form.Price,
+            CurrencyId = form.CurrencyId
         };
     }
 }

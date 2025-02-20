@@ -1,14 +1,15 @@
 ﻿using Data_storage_project_library.Contexts;
 using Data_storage_project_library.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Data_storage_project_library.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace Data_storage_project_library.Repositories;
 
-public class StatusTypeRepository(ApplicationDbContext context) : BaseRepository<StatusTypeEntity>(context)
+public class StatusRepository(ApplicationDbContext context, ILoggerService logger)
+    : BaseRepository<StatusTypeEntity>(context, logger), IStatusRepository
 {
- 
+    public async Task<StatusTypeEntity?> GetByNameAsync(string name)
+    {
+        return await _dbSet.FirstOrDefaultAsync(s => s.Name == name);
+    }
 }

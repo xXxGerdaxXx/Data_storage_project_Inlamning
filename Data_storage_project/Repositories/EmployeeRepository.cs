@@ -1,24 +1,21 @@
 ﻿using Data_storage_project_library.Contexts;
 using Data_storage_project_library.Entities;
+using Data_storage_project_library.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Data_storage_project_library.Repositories;
 
-public class EmployeeRepository(ApplicationDbContext context) : BaseRepository<EmployeeEntity>(context)
+public class EmployeeRepository(ApplicationDbContext context, ILoggerService logger)
+    : BaseRepository<EmployeeEntity>(context, logger), IEmployeeRepository
 {
-    
-
-    // Override GetAllAsync to include Role when fetching employees
     public async Task<IEnumerable<EmployeeEntity>> GetAllEmployeesWithRolesAsync()
     {
         return await _context.Employees.Include(e => e.Role).ToListAsync();
     }
 
-    // Override GetAsync to ensure single employee fetch also includes Role
     public async Task<EmployeeEntity?> GetEmployeeWithRoleAsync(int employeeId)
     {
         return await _context.Employees.Include(e => e.Role)
             .FirstOrDefaultAsync(e => e.Id == employeeId);
     }
 }
-
