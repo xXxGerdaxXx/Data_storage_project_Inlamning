@@ -1,112 +1,93 @@
-﻿using Data_storage_project_library.Contexts;
+﻿using Data_storage_project_library.Interfaces;
 using Data_storage_project_library.Dtos;
 using Data_storage_project_library.Entities;
 using Data_storage_project_library.Factories;
-using Data_storage_project_library.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
+using Data_storage_project_library.Mappers;
 
-namespace Data_storage_project_library.Services
+namespace Data_storage_project_library.Services;
+
+public class CustomerContactService(ICustomerRepository customerRepository, ICustomerContactRepository contactRepository, IUnitOfWork unitOfWork)
+    : ICustomerContactService
 {
-    public class CustomerContactService(ApplicationDbContext context) : ICustomerContactService
+    private readonly ICustomerRepository _customerRepository = customerRepository;
+    private readonly ICustomerContactRepository _contactRepository = contactRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+
+    public async Task<CustomerDto?> AddCustomerContactAsync(int customerId, CustomerContactDto contactDto)
     {
-        private readonly ApplicationDbContext _context = context;
-
-        public async Task<CustomerDto?> AddCustomerContactAsync(int customerId, CustomerContactDto contactDto)
+        return await _unitOfWork.ExecuteAsync(async () =>
         {
-            using var transaction = await _context.Database.BeginTransactionAsync(); 
+            var customer = await _customerRepository.GetByIdAsync(customerId);
+            if (customer == null)
+                return null;
 
-            try
+            var newContact = new CustomerContactEntity
             {
-                var customer = await _context.Customers
-                    .Include(c => c.CustomerContacts)
-                    .FirstOrDefaultAsync(c => c.Id == customerId);
+                FirstName = contactDto.FirstName,
+                LastName = contactDto.LastName,
+                Email = contactDto.Email,
+                Phone = contactDto.Phone
+            };
 
-                if (customer == null)
-                    return null;
+            customer.CustomerContacts.Add(newContact);
+            var updatedCustomer = await _customerRepository.UpdateAsync(customer, c => c.Id == customerId);
 
-                var newContact = new CustomerContactEntity
-                {
-                    FirstName = contactDto.FirstName,
-                    LastName = contactDto.LastName,
-                    Email = contactDto.Email,
-                    Phone = contactDto.Phone
-                };
+            return updatedCustomer != null ? CustomerFactory.Create(updatedCustomer) : null;
+        });
+    }
 
-                customer.CustomerContacts.Add(newContact);
-                await _context.SaveChangesAsync();
+    public async Task<CustomerContactDto?> GetContactByIdAsync(int contactId)
+    {
+        var contact = await _contactRepository.GetByIdAsync(contactId);
+        return contact != null ? CustomerContactMapper.ToDto(contact) : null;
+    }
 
-                await transaction.CommitAsync(); 
-                return CustomerFactory.Create(customer);
-            }
-            catch
-            {
-                await transaction.RollbackAsync(); 
-                throw;
-            }
-        }
+    public async Task<IEnumerable<CustomerContactDto>> GetAllContactsForCustomerAsync(int customerId)
+    {
+        var customer = await _customerRepository.GetByIdAsync(customerId);
+        if (customer == null)
+            throw new KeyNotFoundException($"Customer with ID {customerId} not found.");
 
-        public async Task<CustomerDto?> UpdateCustomerContactAsync(int customerId, int contactId, CustomerContactDto contactDto)
+        return customer.CustomerContacts.Select(CustomerContactMapper.ToDto);
+    }
+
+    public async Task<CustomerDto?> UpdateCustomerContactAsync(int customerId, int contactId, CustomerContactDto contactDto)
+    {
+        return await _unitOfWork.ExecuteAsync(async () =>
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            var customer = await _customerRepository.GetByIdAsync(customerId);
+            if (customer == null)
+                return null;
 
-            try
-            {
-                var customer = await _context.Customers
-                    .Include(c => c.CustomerContacts)
-                    .FirstOrDefaultAsync(c => c.Id == customerId);
+            var contact = customer.CustomerContacts.FirstOrDefault(c => c.Id == contactId);
+            if (contact == null)
+                return null;
 
-                if (customer == null)
-                    return null;
+            contact.FirstName = contactDto.FirstName;
+            contact.LastName = contactDto.LastName;
+            contact.Email = contactDto.Email;
+            contact.Phone = contactDto.Phone;
 
-                var contact = customer.CustomerContacts.FirstOrDefault(c => c.Id == contactId);
-                if (contact == null)
-                    return null;
+            var updatedCustomer = await _customerRepository.UpdateAsync(customer, c => c.Id == customerId);
+            return updatedCustomer != null ? CustomerFactory.Create(updatedCustomer) : null;
+        });
+    }
 
-                contact.FirstName = contactDto.FirstName;
-                contact.LastName = contactDto.LastName;
-                contact.Email = contactDto.Email;
-                contact.Phone = contactDto.Phone;
-
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync(); 
-                return CustomerFactory.Create(customer);
-            }
-            catch
-            {
-                await transaction.RollbackAsync(); 
-                throw;
-            }
-        }
-
-        public async Task<bool> DeleteCustomerContactAsync(int customerId, int contactId)
+    public async Task<bool> DeleteCustomerContactAsync(int customerId, int contactId)
+    {
+        return await _unitOfWork.ExecuteAsync(async () =>
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            var customer = await _customerRepository.GetByIdAsync(customerId);
+            if (customer == null)
+                return false;
 
-            try
-            {
-                var customer = await _context.Customers
-                    .Include(c => c.CustomerContacts)
-                    .FirstOrDefaultAsync(c => c.Id == customerId);
+            var contact = customer.CustomerContacts.FirstOrDefault(c => c.Id == contactId);
+            if (contact == null)
+                return false;
 
-                if (customer == null)
-                    return false;
-
-                var contact = customer.CustomerContacts.FirstOrDefault(c => c.Id == contactId);
-                if (contact == null)
-                    return false;
-
-                customer.CustomerContacts.Remove(contact);
-                await _context.SaveChangesAsync();
-
-                await transaction.CommitAsync(); 
-                return true;
-            }
-            catch
-            {
-                await transaction.RollbackAsync(); 
-                throw;
-            }
-        }
+            customer.CustomerContacts.Remove(contact);
+            await _customerRepository.UpdateAsync(customer, c => c.Id == customerId);
+            return true;
+        });
     }
 }

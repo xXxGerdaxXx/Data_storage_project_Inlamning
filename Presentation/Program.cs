@@ -22,6 +22,7 @@ var services = new ServiceCollection()
 .AddScoped<IServiceRepository, ServiceRepository>()
 .AddScoped<IStatusRepository, StatusRepository>() 
 .AddScoped<ICurrencyRepository, CurrencyRepository>()
+.AddScoped<ICustomerContactRepository, CustomerContactRepository>()
 
 
 .AddScoped<ICustomerService, CustomerService>()
