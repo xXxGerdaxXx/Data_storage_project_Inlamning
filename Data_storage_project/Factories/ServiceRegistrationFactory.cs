@@ -18,8 +18,8 @@ public static class ServiceRegistrationFactory
         {
             ServiceName = form.ServiceName,
             Price = form.Price,
-            CurrencyId = currency.Id, // ✅ Use the passed currency object
-            Currency = currency        // ✅ Use the passed currency object
+            CurrencyId = currency.Id, 
+            Currency = currency        
         };
     }
 }

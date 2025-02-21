@@ -11,5 +11,5 @@ public interface IEmployeeService
     Task<EmployeeDto?> UpdateEmployeeAsync(EmployeeRegistrationForm form, int employeeId); 
     Task<bool> DeleteEmployeeAsync(int employeeId);
 
-    Task<bool> ExistsAsync(int employeeId);  // 🔥 Add this method
+    Task<bool> ExistsAsync(int employeeId);  
 }
