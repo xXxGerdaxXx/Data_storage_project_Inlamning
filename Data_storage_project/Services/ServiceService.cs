@@ -61,4 +61,9 @@ public class ServiceService(IServiceRepository serviceRepository, IUnitOfWork un
             return await _serviceRepository.DeleteAsync(s => s.Id == serviceId);
         });
     }
+
+    public async Task<bool> ExistsAsync(int serviceId)
+    {
+        return await _serviceRepository.GetAsync(s => s.Id == serviceId) != null;
+    }
 }

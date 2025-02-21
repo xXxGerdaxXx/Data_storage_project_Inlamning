@@ -1,5 +1,6 @@
 ﻿using Data_storage_project_library.Dtos;
 using Data_storage_project_library.Entities;
+using System.Globalization;
 
 namespace Data_storage_project_library.Mappers;
 
@@ -19,7 +20,8 @@ public static class ServiceMapper
             ServiceName = entity.ServiceName,
             Price = entity.Price,
             CurrencyId = entity.CurrencyId,
-            CurrencyCode = entity.Currency.Code
+            CurrencyCode = entity.Currency.Code,
+            FormattedPrice = entity.Price.ToString("0.00", CultureInfo.InvariantCulture) 
         };
     }
 }

@@ -327,7 +327,7 @@ public class ProjectMenu(
         var services = await _serviceService.GetAllServicesAsync();
         foreach (var service in services)
         {
-            Console.WriteLine($"ID: {service.Id}, Name: {service.ServiceName}, Price: {service.Price} ");
+            Console.WriteLine($"ID: {service.Id}, Name: {service.ServiceName}, Price: {service.FormattedPrice} {service.CurrencyCode}");
         }
         Console.Write($"Select Service ID (Current: {existingProject.ServiceId}): ");
         if (!int.TryParse(Console.ReadLine(), out int serviceId))

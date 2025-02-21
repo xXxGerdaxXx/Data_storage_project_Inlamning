@@ -13,5 +13,6 @@ public class ServiceDto
     public decimal Price { get; set; }
     public int CurrencyId { get; set; }
     public string CurrencyCode { get; set; } = null!;
+    public string FormattedPrice { get; set; } = null!;
 }
 

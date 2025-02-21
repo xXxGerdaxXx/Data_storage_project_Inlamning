@@ -12,5 +12,5 @@ public class RoleEntity
     public string RoleName { get; set; } = null!;
 
     
-    public ICollection<EmployeeEntity> Employees { get; set; } = new List<EmployeeEntity>();
+    public ICollection<EmployeeEntity> Employees { get; set; } = [];
 }

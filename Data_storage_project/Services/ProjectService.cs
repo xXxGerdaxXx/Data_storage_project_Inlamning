@@ -4,15 +4,42 @@ using Data_storage_project_library.Entities;
 using Data_storage_project_library.Factories;
 using Data_storage_project_library.Interfaces;
 
-
 namespace Data_storage_project_library.Services;
 
-public class ProjectService(IProjectRepository repository, IStatusService statusService, IUnitOfWork unitOfWork, IProjectIdGenerator idGenerator) : IProjectService
+public class ProjectService(
+    IProjectRepository projectRepository,
+    ICustomerService customerService,
+    IServiceService serviceService,
+    IEmployeeService employeeService,
+    IStatusService statusService,
+    IProjectIdGenerator idGenerator,
+    IUnitOfWork unitOfWork) : IProjectService
 {
-    private readonly IProjectRepository _projectRepository = repository;
+    private readonly IProjectRepository _projectRepository = projectRepository;
+    private readonly ICustomerService _customerService = customerService;
+    private readonly IServiceService _serviceService = serviceService;
+    private readonly IEmployeeService _employeeService = employeeService;
     private readonly IStatusService _statusService = statusService;
     private readonly IProjectIdGenerator _idGenerator = idGenerator;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
+
+    // I got this suggestion (and code) for improvement from ChatGPT to create
+    // Private validation method ir order to reduce repetition.
+
+    private async Task ValidateProjectDependencies(ProjectRegistrationForm form)
+    {
+        if (await _customerService.GetCustomerAsync(form.CustomerId) == null)
+            throw new ArgumentException($"Customer with ID {form.CustomerId} does not exist.");
+
+        if (!await _serviceService.ExistsAsync(form.ServiceId))
+            throw new ArgumentException($"Service with ID {form.ServiceId} does not exist.");
+
+        if (!await _employeeService.ExistsAsync(form.EmployeeId))
+            throw new ArgumentException($"Employee with ID {form.EmployeeId} does not exist.");
+
+        if (await _statusService.GetStatusByIdAsync(form.StatusId) == null)
+            throw new KeyNotFoundException($"Status with ID {form.StatusId} not found.");
+    }
 
     public async Task<ProjectsDto?> RegisterProjectAsync(ProjectRegistrationForm form)
     {
@@ -21,10 +48,13 @@ public class ProjectService(IProjectRepository repository, IStatusService status
 
         return await _unitOfWork.ExecuteAsync(async () =>
         {
+            await ValidateProjectDependencies(form); 
+
             var nextId = await _idGenerator.GenerateProjectIdAsync();
             var project = ProjectRegistrationFactory.CreateProject(form, nextId);
-            var createdProject = await _projectRepository.CreateAsync(project);
+            project.CustomerId = form.CustomerId;
 
+            var createdProject = await _projectRepository.CreateAsync(project);
             return createdProject != null ? ProjectFactory.Create(createdProject) : null;
         });
     }
@@ -69,10 +99,10 @@ public class ProjectService(IProjectRepository repository, IStatusService status
             var existingProject = await _projectRepository.GetAsync(p => p.Id == projectId)
                 ?? throw new KeyNotFoundException($"Project with ID {projectId} not found.");
 
-            var status = await _statusService.GetStatusByIdAsync(form.StatusId)
-                ?? throw new KeyNotFoundException($"Status with ID {form.StatusId} not found.");
+            await ValidateProjectDependencies(form); 
 
-            if (status.Name == "Completed" && existingProject.EndDate == null)
+            var status = await _statusService.GetStatusByIdAsync(form.StatusId);
+            if (status!.Name == "Completed" && existingProject.StatusId != form.StatusId && existingProject.EndDate == null)
             {
                 existingProject.EndDate = DateTime.UtcNow;
             }
@@ -80,7 +110,6 @@ public class ProjectService(IProjectRepository repository, IStatusService status
             existingProject.Title = form.Title;
             existingProject.Description = form.Description;
             existingProject.StartDate = form.StartDate;
-            existingProject.CustomerId = form.CustomerId;
             existingProject.StatusId = form.StatusId;
             existingProject.EmployeeId = form.EmployeeId;
             existingProject.ServiceId = form.ServiceId;

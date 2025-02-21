@@ -10,4 +10,6 @@ public interface IServiceService
     Task<ServiceDto?> GetServiceByIdAsync(int serviceId); 
     Task<ServiceDto?> UpdateServiceAsync(int serviceId, ServiceRegistrationForm form); 
     Task<bool> DeleteServiceAsync(int serviceId);
+
+    Task<bool> ExistsAsync(int serviceId);  // 🔥 Add this method
 }

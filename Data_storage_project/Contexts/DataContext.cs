@@ -24,7 +24,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .HasMany(c => c.CustomerContacts)
             .WithOne(cc => cc.Customer)
             .HasForeignKey(cc => cc.CustomerId)
-            .OnDelete(DeleteBehavior.Cascade);  /*This enables automatic deletion of related contacts*/
+            .OnDelete(DeleteBehavior.Cascade);  
 
 
 

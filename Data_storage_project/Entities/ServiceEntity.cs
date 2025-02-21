@@ -12,7 +12,10 @@ public class ServiceEntity
     [Required]
     [StringLength(100, ErrorMessage = "Service name cannot exceed 100 characters.")]
     public string ServiceName { get; set; } = null!;
-
+    /// <summary>
+    /// I accidently wrote wrong precission and now i get 4 zeros after a comma when 
+    /// the price is displayed.
+    /// </summary>
     [Required]
     [Precision(18, 4)]  
     [Range(0.01, 9999999.99, ErrorMessage = "Price must be greater than 0.")]

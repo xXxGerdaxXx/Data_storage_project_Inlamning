@@ -10,5 +10,9 @@ public interface ICustomerService
     Task<CustomerDto?> GetCustomerByIdAsync(int customerId);
     Task<CustomerDto?> UpdateCustomerAsync(int customerId, CustomerUpdateForm form);
     Task<bool> DeleteCustomerAsync(int customerId);
+
+    // 🔥 New Methods (Needed for ProjectService)
+    Task<CustomerDto?> GetCustomerAsync(int customerId);  // Retrieves full customer entity
+    Task<bool> ExistsAsync(int customerId);  // Checks if a customer exists
 }
 

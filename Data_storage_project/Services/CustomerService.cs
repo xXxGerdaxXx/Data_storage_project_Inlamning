@@ -94,4 +94,15 @@ public class CustomerService(ICustomerRepository customerRepository, IUnitOfWork
             return await _customerRepository.DeleteAsync(c => c.Id == customerId);
         });
     }
+
+    public async Task<CustomerDto?> GetCustomerAsync(int customerId)
+    {
+        var customer = await _customerRepository.GetAsync(c => c.Id == customerId);
+        return customer != null ? new CustomerDto { Id = customer.Id, CustomerName = customer.CustomerName } : null;
+    }
+
+    public async Task<bool> ExistsAsync(int customerId)
+    {
+        return await _customerRepository.GetAsync(c => c.Id == customerId) != null;
+    }
 }

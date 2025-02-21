@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Data_storage_project_library.Repositories;
 
-public  class BaseRepository<T>(ApplicationDbContext context, ILoggerService logger) : IBaseRepository<T> where T : class
+public class BaseRepository<T>(ApplicationDbContext context, ILoggerService logger) : IBaseRepository<T> where T : class
 {
     protected readonly ApplicationDbContext _context = context;
     protected readonly DbSet<T> _dbSet = context.Set<T>();

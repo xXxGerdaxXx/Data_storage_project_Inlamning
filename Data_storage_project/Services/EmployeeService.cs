@@ -84,4 +84,9 @@ public class EmployeeService(IEmployeeRepository employeeRepository, IRoleReposi
             return await _employeeRepository.DeleteAsync(e => e.Id == employeeId);
         });
     }
+
+    public async Task<bool> ExistsAsync(int employeeId)
+    {
+        return await _employeeRepository.GetAsync(e => e.Id == employeeId) != null;
+    }
 }
